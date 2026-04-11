@@ -1,0 +1,94 @@
+\documentclass[a4paper]{report}
+\makeatletter
+\renewcommand\normalsize{%
+  \@setfontsize\normalsize{13pt}{19.5pt}%
+}
+\makeatother
+
+\input{preamble.tex}
+\onehalfspacing
+\setlength{\parindent}{1.25cm}
+\setlength{\parskip}{0pt}
+\usepackage{titlesec}
+
+\titleformat{\chapter}[hang]
+  {\normalfont\bfseries\fontsize{16pt}{19pt}\selectfont}
+  {\MakeUppercase{CHƯƠNG \thechapter.}}
+  {0.5em}
+  {\MakeUppercase}
+\titlespacing*{\chapter}{0pt}{6pt}{8pt}
+
+\titleformat{\section}
+  {\normalfont\bfseries\fontsize{14pt}{16.8pt}\selectfont}
+  {\thesection.}
+  {0.5em}
+  {}
+\titlespacing*{\section}{0pt}{6pt}{6pt}
+
+\usepackage{enumitem}
+\setlist{
+    leftmargin=1.8cm,
+    itemsep=0.25em,
+    topsep=0em,
+    parsep=0pt,
+    partopsep=0pt
+}
+
+\usepackage{caption}
+\captionsetup[table]{
+    skip=4pt,
+    aboveskip=0pt,
+    belowskip=0pt
+}
+
+\titleformat{\subsection}
+  {\normalfont\bfseries\fontsize{14pt}{16.8pt}\selectfont}
+  {\thesubsection.}
+  {0.5em}
+  {}
+\titlespacing*{\subsection}{0pt}{6pt}{6pt}
+
+\begin{document}
+
+% ─── FRONTMATTER ────────────────────────────────────────────────────────────
+\input{frontmatter/titlepage.tex}
+\clearpage
+
+\input{frontmatter/acknowledgment}
+\clearpage
+
+\input{frontmatter/declaration}
+\clearpage
+
+\input{frontmatter/abstract}
+\clearpage
+
+% Đánh số La Mã cho phần trước nội dung chính
+\pagenumbering{roman}
+
+% ─── MỤC LỤC ────────────────────────────────────────────────────────────────
+\tableofcontents
+\clearpage
+
+\listoffigures
+\clearpage
+
+\listoftables
+\clearpage
+
+% ─── NỘI DUNG CHÍNH ──────────────────────────────────────────────────────────
+\pagenumbering{arabic}
+\setcounter{page}{1}
+
+\input{content/C1}   % Chương 1 – Giới thiệu
+\input{content/C2}   % Chương 2 – Cơ sở lý thuyết
+\input{content/C3}   % Chương 3 – Thiết kế mô hình
+\input{content/C4}   % Chương 4 – Triển khai trên Mininet
+\input{content/C5}   % Chương 5 – Kết quả đo lường và phân tích
+\input{content/C6}   % Chương 6 – Kết luận và hướng phát triển
+\clearpage
+
+% ─── TÀI LIỆU THAM KHẢO ─────────────────────────────────────────────────────
+\input{backmatter/05_tai_lieu_tham_khao}
+
+\end{document}

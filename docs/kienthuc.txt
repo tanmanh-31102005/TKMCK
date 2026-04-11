@@ -1,0 +1,39 @@
+
+1. Kiến trúc Mạng Nội bộ (LAN Architectures)
+Đây là phần "rìa" của hệ thống, nơi các thiết bị đầu cuối (Host) kết nối. Đề bài yêu cầu bạn so sánh 3 mô hình để thấy sự khác biệt về hiệu năng:
+•	Mạng phẳng (Flat Network): Tất cả thiết bị nằm chung một phân đoạn mạng (Layer 2). Ưu điểm là đơn giản, nhưng nhược điểm là dễ bị nghẽn do lưu lượng quảng bá (broadcast) quá lớn.
+•	Mạng 3 lớp (Core - Distribution - Access): Mô hình truyền thống của Cisco.
+o	Access: Nối thiết bị cuối.
+o	Distribution: Gom các switch access, thực hiện chính sách bảo mật và định tuyến VLAN.
+o	Core: Chuyển mạch tốc độ cực cao để đẩy dữ liệu ra biên (CE).
+•	Mạng 2 lớp (Leaf-Spine): Kiến trúc hiện đại cho trung tâm dữ liệu.
+o	Mọi Switch Leaf đều nối với mọi Switch Spine.
+o	Ưu điểm: Băng thông cực lớn, độ trễ thấp và khả năng mở rộng tuyệt vời (không bị giới hạn bởi giao thức Spanning Tree).
+
+2. Công nghệ MPLS (Multiprotocol Label Switching)
+Đây là "linh hồn" của mạng ISP (Backbone).
+•	Label Switching (Chuyển mạch nhãn): Thay vì đọc địa chỉ IP đích (Layer 3) vốn rất chậm, Router chỉ cần nhìn vào một con số (Nhãn - Label) được dán ở Layer 2.5 để quyết định đẩy gói tin đi đâu.
+•	Cơ chế hoạt động:
+o	Push: Router PE nhận gói IP, dán thêm nhãn vào.
+o	Swap: Router P nhận gói có nhãn, đổi nhãn cũ thành nhãn mới để chuyển tiếp.
+o	Pop: Router PE đích gỡ nhãn ra, trả lại gói IP ban đầu cho khách hàng.
+
+3. Metro Ethernet & VPLS (Virtual Private LAN Service)
+Đề bài yêu cầu triển khai Metro Ethernet, và trong môi trường MPLS, công nghệ này thường được thực hiện qua VPLS.
+•	Metro Ethernet: Là dịch vụ cung cấp kết nối Ethernet giữa các điểm trong một thành phố. Nó khiến các chi nhánh ở xa nhau cảm thấy như đang cắm chung vào một cái Switch khổng lồ.
+•	VPLS: Đây là một công nghệ Layer 2 VPN. Nó tạo ra các đường hầm ảo (Pseudowire) qua lõi MPLS để truyền các Frame Ethernet đi.
+o	Tại sao cần VPLS? Vì nó cho phép bạn truyền các dữ liệu Layer 2 (như bản tin ARP, VLAN tag) xuyên qua mạng ISP mà không bị thay đổi.
+
+4. Các Giao thức Điều khiển (Control Plane Protocols)
+Để các thành phần trên vận hành tự động, bạn cần cấu hình các giao thức:
+•	OSPF (Open Shortest Path First): Giao thức định tuyến nội vùng. Trong bài này, OSPF giúp các Router PE và P "thấy" nhau bên trong mạng lõi của ISP. Đây là lớp nền (Underlay).
+•	LDP (Label Distribution Protocol): Sau khi OSPF đã chỉ đường, LDP có nhiệm vụ "phát nhãn". Nó phân phối các con số (label) cho các đường đi mà OSPF đã tìm thấy.
+•	MP-BGP (Multi-Protocol BGP): Thường dùng để trao đổi thông tin định tuyến của khách hàng giữa các PE với nhau mà không làm ảnh hưởng đến bảng định tuyến của các Router lõi (P).
+
+5. Các Chỉ số Hiệu năng (Performance Metrics)
+Để đánh giá kết quả đạt được, bạn phải hiểu các định nghĩa kỹ thuật này:
+•	Throughput (Thông lượng): Lượng dữ liệu thực tế truyền qua mạng trong một giây (bps).
+•	Delay/Latency (Độ trễ): Thời gian gói tin đi từ nguồn đến đích (ms).
+•	Jitter (Biến động trễ): Sự thay đổi của độ trễ giữa các gói tin liên tiếp. Jitter cao sẽ gây giật lag (đặc biệt là video call).
+•	Packet Loss (Tỉ lệ mất gói): Phần trăm số gói tin không tới được đích. Tỉ lệ này tăng cao khi mạng bị nghẽn (congested).
+

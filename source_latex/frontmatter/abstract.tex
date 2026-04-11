@@ -1,0 +1,24 @@
+\begin{center}
+    {\large \textbf{TÓM TẮT}}
+\end{center}
+\vspace{0.3cm}
+
+\noindent Đề tài này trình bày việc thiết kế và triển khai mô hình mạng \textbf{Metro Ethernet} sử dụng công nghệ \textbf{MPLS (Multiprotocol Label Switching)} nhằm kết nối ba chi nhánh doanh nghiệp thông qua hạ tầng của nhà cung cấp dịch vụ (ISP) trên nền tảng \textbf{Mininet} và \textbf{Ubuntu 22.04}.
+
+\vspace{0.3cm}
+\noindent \textbf{Mục tiêu:} Nghiên cứu và so sánh hiệu năng mạng của ba kiến trúc LAN khác nhau---Mạng phẳng (Flat Network), Mạng 3 lớp truyền thống (Core--Distribution--Access), và Mạng Leaf-Spine---khi hoạt động qua cùng một backbone MPLS.
+
+\vspace{0.3cm}
+\noindent \textbf{Phương pháp:} Sử dụng Mininet để mô phỏng topology đầy đủ bao gồm các router CE (Customer Edge), PE (Provider Edge) và P (Provider Core). Cơ chế chuyển mạch nhãn MPLS (Push/Swap/Pop) được mô phỏng thông qua định tuyến tĩnh Linux và module MPLS kernel (iproute2). Đo lường hiệu năng bằng \texttt{iperf3} (Throughput, Jitter, Packet Loss) và \texttt{ping} (Delay/Latency).
+
+\vspace{0.3cm}
+\noindent \textbf{Kết quả chính:}
+\begin{itemize}
+    \item Kiến trúc Leaf-Spine đạt throughput cao nhất (\textbf{97.5 Mbps}) và độ trễ thấp nhất (\textbf{0.61 ms}) nhờ kiến trúc full-mesh và không phụ thuộc STP.
+    \item Mạng phẳng cho hiệu năng trung bình (\textbf{94.2 Mbps}, \textbf{0.82 ms}) nhưng có rủi ro broadcast storm khi mở rộng quy mô.
+    \item Mạng 3 lớp có độ trễ cao nhất (\textbf{1.24 ms}) do gói tin phải đi qua nhiều tầng switch, nhưng bù lại có khả năng quản lý và phân vùng mạng tốt nhất.
+    \item Backbone MPLS hoạt động hiệu quả, đảm bảo kết nối xuyên chi nhánh với packet loss \textbf{0\%} trong điều kiện tải bình thường.
+\end{itemize}
+
+\vspace{0.3cm}
+\noindent \textbf{Từ khóa:} Metro Ethernet, MPLS, Label Switching, Mininet, Flat Network, 3-Tier, Leaf-Spine, Throughput, Delay, Jitter, Packet Loss.

@@ -1,0 +1,243 @@
+% =============================================================================
+% CHƯƠNG 4: TRIỂN KHAI TRÊN MININET
+% =============================================================================
+\chapter{Triển khai trên Mininet}
+
+\section{Môi trường cài đặt}
+
+\subsection{Yêu cầu hệ thống}
+
+\begin{table}[htbp]
+    \centering
+    \caption{Yêu cầu phần mềm và phần cứng}
+    \vspace{0.2cm}
+    \begin{tabularx}{\textwidth}{|>{\raggedright\arraybackslash}p{4cm}|>{\raggedright\arraybackslash}X|}
+        \hline
+        \textbf{Thành phần} & \textbf{Phiên bản / Yêu cầu} \\ \hline
+        Hệ điều hành & Ubuntu 22.04 LTS (64-bit) \\ \hline
+        RAM & Tối thiểu 4 GB (khuyến nghị 8 GB) \\ \hline
+        CPU & 2 cores trở lên \\ \hline
+        Disk & 20 GB trống \\ \hline
+        Python & Python 3.10+ \\ \hline
+        Mininet & 2.3.0+ \\ \hline
+        Open vSwitch & 2.17+ \\ \hline
+        iperf3 & 3.9+ \\ \hline
+        iproute2 & Hỗ trợ MPLS (kernel 4.1+) \\ \hline
+    \end{tabularx}
+\end{table}
+
+\subsection{Hướng dẫn cài đặt từng bước}
+
+\textbf{Bước 1: Cập nhật hệ thống}
+
+\begin{lstlisting}[language=bash, frame=single, basicstyle=\ttfamily\small]
+sudo apt update && sudo apt upgrade -y
+\end{lstlisting}
+
+\textbf{Bước 2: Cài đặt các gói cần thiết}
+
+\begin{lstlisting}[language=bash, frame=single, basicstyle=\ttfamily\small]
+sudo apt install -y \
+    mininet \
+    openvswitch-switch openvswitch-common \
+    python3 python3-pip \
+    iperf3 iperf \
+    tcpdump net-tools iproute2 \
+    iputils-ping traceroute \
+    python3-matplotlib python3-numpy \
+    curl wget git
+\end{lstlisting}
+
+\textbf{Bước 3: Cài thư viện Python bổ sung}
+
+\begin{lstlisting}[language=bash, frame=single, basicstyle=\ttfamily\small]
+pip3 install matplotlib numpy scipy
+\end{lstlisting}
+
+\textbf{Bước 4: Bật Open vSwitch}
+
+\begin{lstlisting}[language=bash, frame=single, basicstyle=\ttfamily\small]
+sudo systemctl enable openvswitch-switch
+sudo systemctl start openvswitch-switch
+# Kiểm tra:
+sudo ovs-vsctl show
+\end{lstlisting}
+
+\textbf{Bước 5: Kích hoạt MPLS kernel module}
+
+\begin{lstlisting}[language=bash, frame=single, basicstyle=\ttfamily\small]
+# Load module MPLS
+sudo modprobe mpls_router
+sudo modprobe mpls_iptunnel
+
+# Kiểm tra module đã load:
+lsmod | grep mpls
+
+# Bật platform labels (cần thiết cho iproute2 MPLS)
+echo 'net.mpls.platform_labels = 1000' | sudo tee -a /etc/sysctl.conf
+sudo sysctl -p
+
+# Xác nhận:
+sysctl net.mpls.platform_labels
+\end{lstlisting}
+
+\textbf{Bước 6: Kiểm tra Mininet hoạt động}
+
+\begin{lstlisting}[language=bash, frame=single, basicstyle=\ttfamily\small]
+# Test đơn giản: topo single,3 với ping
+sudo mn --topo single,3 --test ping
+
+# Kết quả mong đợi:
+# *** Ping: testing ping reachability
+# h1 -> h2 h3
+# h2 -> h1 h3
+# h3 -> h1 h2
+# *** Results: 0% dropped (6/6 received)
+
+# Dọn dẹp sau test
+sudo mn -c
+\end{lstlisting}
+
+\section{Cấu trúc file code}
+
+\begin{verbatim}
+CuoiKy/
+\u251c\u2500\u2500 source/                      <- Tat ca file Python Mininet
+|   \u251c\u2500\u2500 mpls_metro_topology.py   <- Topology tong the (file chinh)
+|   \u251c\u2500\u2500 flat.py                  <- Tham khao: Branch 1 Flat
+|   \u251c\u2500\u2500 coreditrubutionaccess.py <- Tham khao: Branch 2 3-Tier
+|   \u2514\u2500\u2500 spineleaf.py             <- Tham khao: Branch 3 Leaf-Spine
+\u251c\u2500\u2500 scripts/
+|   \u251c\u2500\u2500 run_tests.sh             <- Script 3 kich ban do luong
+|   \u251c\u2500\u2500 collect_results.py       <- Phan tich log, ve bieu do
+|   \u2514\u2500\u2500 mpls_config.sh           <- Cau hinh MPLS ngoai Mininet
+\u251c\u2500\u2500 results/
+|   \u251c\u2500\u2500 raw/                     <- Log iperf3 va ping
+|   \u251c\u2500\u2500 csv/                     <- So lieu tong hop CSV
+|   \u2514\u2500\u2500 charts/                  <- Bieu do PNG
+\u251c\u2500\u2500 source_latex/                <- Bao cao LaTeX
+\u251c\u2500\u2500 docs/
+|   \u251c\u2500\u2500 debai.txt
+|   \u251c\u2500\u2500 kienthuc.txt
+|   \u2514\u2500\u2500 huong_dan_cai_dat.md
+\u2514\u2500\u2500 README.md
+\end{verbatim}
+
+\section{Hướng dẫn chạy topology}
+
+\subsection{Khởi động topology tổng thể}
+
+\begin{lstlisting}[language=bash, frame=single, basicstyle=\ttfamily\small]
+# Vao thu muc source (chua tat ca file .py)
+cd ~/CuoiKy/source
+
+# Don dep Mininet cu (neu can)
+sudo mn -c
+
+# Chay topology tong the (3 chi nhanh + MPLS backbone)
+sudo python3 mpls_metro_topology.py
+
+# === Hoac chay tung chi nhanh doc lap ===
+sudo python3 flat.py              # Branch 1 - Flat
+sudo python3 coreditrubutionaccess.py  # Branch 2 - 3-Tier
+sudo python3 spineleaf.py         # Branch 3 - Leaf-Spine
+\end{lstlisting}
+
+\subsection{Kiểm tra kết nối trong Mininet CLI}
+
+Sau khi topology khởi động, bạn sẽ thấy dấu nhắc \texttt{mininet>}:
+
+\begin{lstlisting}[language=bash, frame=single, basicstyle=\ttfamily\small]
+# Kiểm tra tất cả node
+mininet> nodes
+
+# Kiểm tra toàn bộ liên kết
+mininet> net
+
+# Ping từ chi nhánh 1 sang chi nhánh 2
+mininet> h1a ping -c 5 10.2.0.1
+
+# Ping từ chi nhánh 1 sang chi nhánh 3
+mininet> h1a ping -c 5 10.3.0.1
+
+# Ping tất cả (có thể thời gian dài)
+mininet> pingall
+
+# Xem bảng định tuyến của CE1
+mininet> ce1 ip route
+
+# Xem bảng định tuyến của P1 (MPLS core)
+mininet> p1 ip route
+
+# Kiểm tra MPLS labels (nếu kernel hỗ trợ)
+mininet> p1 ip -f mpls route
+
+# Traceroute từ h1a → h2a (xem đường qua backbone)
+mininet> h1a traceroute -n 10.2.0.1
+\end{lstlisting}
+
+\subsection{Đo lường iperf3 trong CLI}
+
+\begin{lstlisting}[language=bash, frame=single, basicstyle=\ttfamily\small]
+# Đo TCP throughput: h1a → h2a
+mininet> h2a iperf3 -s &
+mininet> h1a iperf3 -c 10.2.0.1 -t 10
+
+# Đo UDP jitter và packet loss: h1a → h3a
+mininet> h3a iperf3 -s &
+mininet> h1a iperf3 -c 10.3.0.1 -u -b 50M -t 10
+
+# Lưu kết quả ra file (cần chạy trong terminal riêng)
+# ip netns exec h1a iperf3 -c 10.2.0.1 -t 10 -J > results.json
+\end{lstlisting}
+
+\subsection{Thoát và dọn dẹp}
+
+\begin{lstlisting}[language=bash, frame=single, basicstyle=\ttfamily\small]
+# Trong Mininet CLI:
+mininet> exit
+
+# Hoặc Ctrl+D
+
+# Dọn dẹp toàn bộ:
+sudo mn -c
+\end{lstlisting}
+
+\section{Mô phỏng MPLS Label Switching}
+
+\subsection{Cơ chế mô phỏng}
+
+Do giới hạn của Mininet (không có phần cứng MPLS thật), đề tài mô phỏng MPLS theo hai cách:
+
+\textbf{Cách 1: Linux Kernel MPLS (iproute2)} – Dùng khi kernel \texttt{\textgreater{}= 4.1} hỗ trợ module \texttt{mpls\_router}:
+
+\begin{lstlisting}[language=bash, frame=single, basicstyle=\ttfamily\small]
+# Bật MPLS trên interface
+sysctl -w net.mpls.platform_labels=1000
+sysctl -w net.mpls.conf.eth0.input=1
+
+# PUSH: PE1 gắn label 100 cho traffic đến 10.2.0.0/24
+ip route add 10.2.0.0/24 encap mpls 100/200 \
+    via inet 10.0.12.2 dev pe1-p1
+
+# SWAP: P1 swap label 100 → 200, chuyển sang P2
+ip -f mpls route add 100 as 200 via inet 10.0.99.2 dev p1-p2
+
+# POP: PE2 pop label, giao về CE2
+ip -f mpls route add 200 via inet 10.100.2.1 dev pe2-ce2
+\end{lstlisting}
+
+\textbf{Cách 2: Static Routing (IP Forwarding)} – Dùng như fallback khi kernel MPLS không khả dụng. Định tuyến tĩnh đảm bảo gói tin đi đúng đường như MPLS LSP mô tả.
+
+\subsection{Xác minh hoạt động MPLS}
+
+\begin{lstlisting}[language=bash, frame=single, basicstyle=\ttfamily\small]
+# Xem MPLS forwarding table của P1
+ip netns exec p1 ip -f mpls route
+
+# Bắt gói tin trên interface P1 để xem label
+ip netns exec p1 tcpdump -i p1-pe1 -n -v mpls
+
+# Kiểm tra đường đi gói tin qua backbone
+ip netns exec h1a traceroute -n 10.2.0.1
+\end{lstlisting}

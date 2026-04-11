@@ -1,0 +1,94 @@
+% =============================================================================
+% CHƯƠNG 6: KẾT LUẬN VÀ HƯỚNG PHÁT TRIỂN
+% =============================================================================
+\chapter{Kết luận và hướng phát triển}
+
+\section{Tóm tắt kết quả đạt được}
+
+Đề tài đã hoàn thành đầy đủ các mục tiêu đề ra, bao gồm:
+
+\begin{itemize}
+    \item \textbf{Thiết kế mô hình mạng} Metro Ethernet MPLS kết nối 3 chi nhánh doanh nghiệp thông qua backbone ISP với đầy đủ các thành phần CE, PE, P router.
+
+    \item \textbf{Triển khai thành công trên Mininet} với cả 3 kiến trúc LAN:
+    \begin{itemize}
+        \item Chi nhánh 1: Mạng phẳng (Flat Network) – 1 switch, 3 host.
+        \item Chi nhánh 2: Mạng 3 lớp (Core–Distribution–Access) – 4 switch, 4 host.
+        \item Chi nhánh 3: Mạng Leaf-Spine – 4 switch (2 Spine + 2 Leaf), 4 host.
+    \end{itemize}
+
+    \item \textbf{Mô phỏng MPLS Label Switching} (Push/Swap/Pop) thông qua kết hợp Linux kernel MPLS (iproute2) và định tuyến tĩnh, đảm bảo gói tin đi đúng đường LSP theo thiết kế.
+
+    \item \textbf{Đo lường và phân tích} 4 chỉ số hiệu năng (Throughput, Delay, Packet Loss, Jitter) cho 3 kịch bản tương ứng 3 kiến trúc LAN.
+\end{itemize}
+
+\subsection{Kết luận về kiến trúc LAN}
+
+\begin{table}[htbp]
+    \centering
+    \caption{Đánh giá tổng hợp 3 kiến trúc LAN}
+    \vspace{0.2cm}
+    \begin{tabularx}{\textwidth}{|>{\raggedright\arraybackslash}p{2.5cm}|c|c|c|>{\raggedright\arraybackslash}X|}
+        \hline
+        \textbf{Kiến trúc} & \textbf{Throughput} & \textbf{Delay} & \textbf{Jitter} & \textbf{Phù hợp nhất với} \\ \hline
+        Flat Network & ★★★★ & ★★★★ & ★★★ & Văn phòng nhỏ (\textless 50 thiết bị), mạng tạm thời \\ \hline
+        3-Tier (CDA) & ★★★ & ★★★ & ★★★ & Doanh nghiệp vừa, cần quản lý VLAN, bảo mật \\ \hline
+        Leaf-Spine & ★★★★★ & ★★★★★ & ★★★★★ & Data Center, ứng dụng real-time, quy mô lớn \\ \hline
+    \end{tabularx}
+\end{table}
+
+\subsection{Kết luận về MPLS}
+
+MPLS chứng minh là công nghệ phù hợp cho Metro Ethernet backbone vì:
+\begin{itemize}
+    \item Tách biệt hoàn toàn lưu lượng của các khách hàng khác nhau trên cùng hạ tầng ISP.
+    \item Cơ chế chuyển mạch nhãn nhanh hơn tra cứu bảng định tuyến IP.
+    \item Hỗ trợ Traffic Engineering (TE) linh hoạt, đảm bảo SLA về băng thông và độ trễ.
+    \item Nền tảng để triển khai các dịch vụ VPN, VPLS phức tạp hơn trong tương lai.
+\end{itemize}
+
+\section{Hướng phát triển}
+
+Dựa trên kết quả đề tài, có thể mở rộng theo các hướng sau:
+
+\textbf{1. Tích hợp giao thức động OSPF + LDP thực sự:}
+\begin{itemize}
+    \item Dùng FRRouting (FRR) với OSPF và LDP chạy trên các router trong Mininet.
+    \item Nhãn MPLS sẽ được phân phối tự động, không cần cấu hình tĩnh.
+\end{itemize}
+
+\textbf{2. Triển khai VPLS hoàn chỉnh (Layer 2 VPN):}
+\begin{itemize}
+    \item Dùng Open vSwitch với OVN (Open Virtual Network) hoặc FRR+MPLS để mô phỏng Pseudowire.
+    \item Các chi nhánh sẽ giao tiếp ở Layer 2 như đang cùng một LAN vật lý.
+\end{itemize}
+
+\textbf{3. Tích hợp QoS (Quality of Service):}
+\begin{itemize}
+    \item Dùng \texttt{tc} (Traffic Control) và MPLS EXP bits để ưu tiên lưu lượng VoIP/video.
+    \item Đo tác động của QoS lên jitter và packet loss khi mạng congested.
+\end{itemize}
+
+\textbf{4. Mở rộng quy mô và thêm chi nhánh:}
+\begin{itemize}
+    \item Thêm chi nhánh thứ 4, 5 vào backbone MPLS để test khả năng mở rộng.
+    \item Mô phỏng failover khi một PE hoặc P router bị sự cố (MPLS Fast Reroute).
+\end{itemize}
+
+\textbf{5. Chạy trên GNS3 hoặc EVE-NG với router thực:}
+\begin{itemize}
+    \item Dùng Cisco IOS hoặc Junos image trong GNS3 để có MPLS thực sự.
+    \item So sánh số liệu với môi trường Mininet để đánh giá độ tin cậy của mô phỏng.
+\end{itemize}
+
+\textbf{6. Tự động hóa cấu hình bằng Ansible hoặc NETCONF:}
+\begin{itemize}
+    \item Viết playbook Ansible để tự động cấu hình toàn bộ hệ thống.
+    \item Tích hợp với hệ thống giám sát (Prometheus + Grafana) để monitor real-time.
+\end{itemize}
+
+\section{Lời kết}
+
+Đề tài đã thể hiện được triết lý thiết kế mạng Metro Ethernet hiện đại: kết hợp \textbf{kiến trúc LAN hiệu quả} tại từng chi nhánh với \textbf{backbone MPLS linh hoạt} của ISP để tạo ra hạ tầng kết nối đa chi nhánh có thể mở rộng, dễ quản lý và đáp ứng các yêu cầu SLA khắt khe của doanh nghiệp.
+
+Môi trường Mininet tuy là mô phỏng phần mềm, nhưng đã cung cấp một nền tảng học tập và thực hành rất hữu ích, giúp hiểu rõ cơ chế hoạt động của MPLS và sự khác biệt giữa các kiến trúc LAN mà không cần đầu tư thiết bị phần cứng đắt tiền.

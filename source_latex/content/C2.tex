@@ -1,0 +1,174 @@
+% =============================================================================
+% CHƯƠNG 2: CƠ SỞ LÝ THUYẾT
+% =============================================================================
+\chapter{Cơ sở lý thuyết}
+
+\section{Kiến trúc mạng nội bộ (LAN Architectures)}
+
+Mạng nội bộ tại mỗi chi nhánh doanh nghiệp có thể được tổ chức theo nhiều mô hình khác nhau, mỗi mô hình có những ưu điểm và nhược điểm riêng tùy vào quy mô và yêu cầu của tổ chức.
+
+\subsection{Mạng phẳng (Flat Network)}
+
+Mạng phẳng là mô hình đơn giản nhất: tất cả thiết bị đầu cuối (host, máy in, server) được kết nối chung vào một hoặc một vài switch Layer 2, chia sẻ cùng một \textbf{broadcast domain} (miền quảng bá).
+
+\textbf{Đặc điểm:}
+\begin{itemize}
+    \item Tất cả thiết bị nằm trong cùng một subnet (ví dụ: 10.1.0.0/24).
+    \item Giao tiếp nội bộ hoàn toàn ở Layer 2 (không cần routing).
+    \item Cấu hình đơn giản, chi phí thấp.
+\end{itemize}
+
+\textbf{Ưu điểm:} Triển khai nhanh, quản lý đơn giản, phù hợp mạng quy mô nhỏ (dưới 50 thiết bị).
+
+\textbf{Nhược điểm:}
+\begin{itemize}
+    \item \textbf{Broadcast storm}: Khi số lượng thiết bị tăng, lưu lượng broadcast (ARP, DHCP...) chiếm dụng băng thông đáng kể.
+    \item Không có phân vùng bảo mật giữa các phòng ban.
+    \item Khả năng mở rộng kém – không phù hợp khi mạng vượt quá vài trăm host.
+\end{itemize}
+
+\subsection{Mạng 3 lớp truyền thống (Core -- Distribution -- Access)}
+
+Đây là mô hình phân cấp kinh điển của Cisco, phù hợp cho các tổ chức có quy mô vừa đến lớn.
+
+\begin{itemize}
+    \item \textbf{Access Layer (Tầng truy cập)}: Kết nối trực tiếp thiết bị đầu cuối. Switch tầng này thực hiện port security, QoS marking và VLAN tagging.
+    \item \textbf{Distribution Layer (Tầng phân phối)}: Tập hợp các switch access, thực hiện \textbf{Inter-VLAN Routing} (định tuyến giữa các VLAN), áp dụng chính sách bảo mật (ACL), và tóm tắt định tuyến lên Core.
+    \item \textbf{Core Layer (Tầng lõi)}: Chuyển mạch tốc độ cực cao, kết nối các khối Distribution với nhau và với gateway ra ngoài (CE Router). Không thực hiện chính sách phức tạp để đảm bảo tốc độ.
+\end{itemize}
+
+\textbf{Ưu điểm:} Phân vùng rõ ràng, dễ debug, hỗ trợ VLAN và QoS, khả năng mở rộng tốt, dự phòng linh hoạt (STP, HSRP).
+
+\textbf{Nhược điểm:} Chi phí cao hơn mạng phẳng; STP có thể chặn đường dự phòng, lãng phí băng thông; độ trễ cao hơn do gói tin phải đi qua nhiều lớp switch.
+
+\subsection{Mạng 2 lớp Leaf-Spine}
+
+Kiến trúc Leaf-Spine là mô hình hiện đại được phát triển cho \textbf{Data Center} và các mạng đòi hỏi băng thông cực cao, độ trễ thấp.
+
+\begin{itemize}
+    \item \textbf{Spine (Lõi)}: Các switch lõi tốc độ cao. Mỗi Spine kết nối với \textit{tất cả} Leaf switch (Full Mesh). Spine không kết nối trực tiếp với thiết bị đầu cuối.
+    \item \textbf{Leaf (Truy cập)}: Các switch truy cập kết nối trực tiếp host. Mỗi Leaf kết nối với tất cả Spine.
+\end{itemize}
+
+\textbf{Ưu điểm:}
+\begin{itemize}
+    \item \textbf{Độ trễ nhất quán}: Mọi gói tin giữa hai host đều đi qua tối đa 2 hop (Leaf → Spine → Leaf) – không phụ thuộc vị trí.
+    \item \textbf{Băng thông cực lớn}: Full Mesh Spine-Leaf cho phép ECMP (Equal-Cost Multi-Path) chia tải đều trên nhiều đường.
+    \item \textbf{Không cần STP}: Kiến trúc không tạo vòng lặp Layer 2, loại bỏ hạn chế của Spanning Tree.
+    \item \textbf{Mở rộng dễ dàng}: Thêm Leaf switch không cần thay đổi cấu hình Spine.
+\end{itemize}
+
+\textbf{Nhược điểm:} Chi phí cao hơn (cần nhiều cổng uplink trên mỗi Leaf), phức tạp hơn khi cấu hình định tuyến Layer 3 (ECMP, OSPF/BGP).
+
+\section{Công nghệ MPLS (Multiprotocol Label Switching)}
+
+\subsection{Khái niệm và nguyên lý}
+
+MPLS là công nghệ \textbf{chuyển mạch nhãn} hoạt động ở \textit{Layer 2.5} (giữa Layer 2 và Layer 3). Thay vì mỗi router phải tra cứu địa chỉ IP đích trong bảng định tuyến (tốn kém về thời gian CPU), MPLS chỉ cần đọc một \textbf{nhãn (label)} gắn vào header của gói tin để đưa ra quyết định chuyển tiếp – nhanh hơn nhiều.
+
+Một nhãn MPLS có cấu trúc 32-bit gồm:
+\begin{itemize}
+    \item \textbf{Label (20 bit)}: Giá trị nhãn (0--1.048.575).
+    \item \textbf{TC/EXP (3 bit)}: Traffic Class – dùng cho QoS.
+    \item \textbf{S (1 bit)}: Bottom of Stack – nhãn cuối cùng trong ngăn xếp.
+    \item \textbf{TTL (8 bit)}: Time To Live.
+\end{itemize}
+
+\subsection{Cơ chế Push -- Swap -- Pop}
+
+\begin{enumerate}
+    \item \textbf{Push (Gắn nhãn)}: Khi gói IP từ CE đến PE vào (Ingress PE), router PE tra bảng MPLS forwarding (LFIB) và \textit{gắn một nhãn} vào header gói tin. Gói tin bây giờ là MPLS packet.
+
+    \item \textbf{Swap (Hoán đổi nhãn)}: Các router P ở lõi backbone nhận MPLS packet, \textit{thay nhãn cũ bằng nhãn mới} (theo LFIB của mình) rồi chuyển tiếp. Không cần tra IP header.
+
+    \item \textbf{Pop (Gỡ nhãn)}: Router PE đích (Egress PE) nhận MPLS packet, \textit{gỡ nhãn} và trả lại gói IP thuần túy để chuyển tiếp về CE đích. Kỹ thuật \textbf{Penultimate Hop Popping (PHP)} cho phép router P cuối cùng gỡ nhãn giúp PE, giảm tải cho PE.
+\end{enumerate}
+
+\subsection{So sánh MPLS với IP Routing truyền thống}
+
+\begin{table}[htbp]
+    \centering
+    \caption{So sánh MPLS và IP Routing truyền thống}
+    \vspace{0.2cm}
+    \begin{tabularx}{\textwidth}{|>{\raggedright\arraybackslash}p{3.5cm}|>{\raggedright\arraybackslash}X|>{\raggedright\arraybackslash}X|}
+        \hline
+        \textbf{Tiêu chí} & \textbf{IP Routing truyền thống} & \textbf{MPLS Label Switching} \\ \hline
+        Cơ sở quyết định & Tra bảng định tuyến IP (longest prefix match) & Tra bảng nhãn LFIB (exact match – nhanh hơn) \\ \hline
+        Tốc độ xử lý & Chậm hơn do xử lý IP header & Nhanh hơn do chỉ đọc label 20-bit \\ \hline
+        Lớp hoạt động & Layer 3 & Layer 2.5 \\ \hline
+        Traffic Engineering & Hạn chế (chỉ theo routing metric) & Linh hoạt (RSVP-TE, đặt trước băng thông) \\ \hline
+        VPN / Phân tách lưu lượng & Cần VRF + nhiều cấu hình & Tích hợp sẵn (MPLS VPN, VPLS) \\ \hline
+        Giao thức phân phối nhãn & Không có & LDP, RSVP-TE, MP-BGP \\ \hline
+        Độ phức tạp cấu hình & Đơn giản hơn & Phức tạp hơn, cần hiểu LFIB/FEC/LSP \\ \hline
+    \end{tabularx}
+\end{table}
+
+\section{Metro Ethernet và VPLS}
+
+\subsection{Metro Ethernet}
+
+Metro Ethernet (hay Carrier Ethernet) là công nghệ cung cấp dịch vụ kết nối Ethernet dạng thương mại ở quy mô đô thị (Metropolitan Area). Khách hàng (doanh nghiệp) \textit{cảm thấy} như đang cắm dây vào một Switch khổng lồ duy nhất, trong khi thực tế ISP dùng hạ tầng phức tạp ở bên dưới.
+
+\textbf{Các loại dịch vụ Metro Ethernet (MEF):}
+\begin{itemize}
+    \item \textbf{E-Line (Point-to-Point)}: Kết nối điểm-điểm giữa 2 chi nhánh – tương đương đường leased line Ethernet.
+    \item \textbf{E-LAN (Multipoint-to-Multipoint)}: Kết nối nhiều chi nhánh – tất cả đặt trong cùng một "LAN ảo" khổng lồ (đây là dịch vụ đề tài này hướng tới).
+    \item \textbf{E-Tree}: Kết nối hình cây – root site giao tiếp với nhiều leaf site.
+\end{itemize}
+
+\subsection{VPLS (Virtual Private LAN Service)}
+
+VPLS là công nghệ \textbf{Layer 2 VPN} được xây dựng trên nền MPLS, cho phép nhiều chi nhánh chia sẻ một "LAN ảo" duy nhất xuyên qua mạng ISP. Các frame Ethernet (kể cả broadcast, VLAN tag) được đóng gói trong \textbf{Pseudowire} (đường hầm ảo) đi qua lõi MPLS.
+
+\textbf{Vai trò trong đề tài:} Do giới hạn của Mininet, đề tài mô phỏng MPLS Label Switching ở mức IP routing thay vì VPLS Layer 2. Tuy nhiên, ý tưởng kết nối đa chi nhánh như một E-LAN vẫn được thể hiện qua mô hình định tuyến xuyên backbone.
+
+\section{Các giao thức điều khiển MPLS}
+
+\subsection{OSPF (Open Shortest Path First)}
+
+OSPF là giao thức định tuyến nội vùng (IGP) dựa trên thuật toán Dijkstra (SPF). Trong mạng MPLS:
+\begin{itemize}
+    \item OSPF chạy giữa các router PE và P để tất cả \textit{"nhìn thấy"} nhau (underlay connectivity).
+    \item OSPF cung cấp topology database để LDP biết đường đi và phân phối nhãn theo.
+    \item Hỗ trợ phân vùng theo Area để giảm tải tính toán SPF trong mạng lớn.
+\end{itemize}
+
+\subsection{LDP (Label Distribution Protocol)}
+
+LDP tự động phân phối nhãn MPLS giữa các router:
+\begin{itemize}
+    \item Mỗi router thiết lập \textbf{LDP session} TCP với các router láng giềng.
+    \item LDP ánh xạ mỗi \textbf{FEC (Forwarding Equivalence Class)} – thường là một prefix IP – với một nhãn cục bộ.
+    \item Nhãn được trao đổi giữa các router để xây dựng \textbf{LSP (Label Switched Path)}.
+\end{itemize}
+
+\subsection{MP-BGP (Multiprotocol BGP)}
+
+MP-BGP mở rộng BGP để mang thêm thông tin VPN (VPN-IPv4 prefix, Route Target). Trong MPLS VPN:
+\begin{itemize}
+    \item PE router dùng MP-BGP để trao đổi routing information của khách hàng với các PE khác.
+    \item P router không cần chạy MP-BGP (chỉ cần OSPF + LDP) – đây là ưu điểm giúp P router nhẹ hơn.
+    \item Route Target (RT) và Route Distinguisher (RD) dùng để phân tách bảng định tuyến của từng khách hàng (VRF).
+\end{itemize}
+
+\section{Các chỉ số hiệu năng mạng}
+
+\begin{table}[htbp]
+    \centering
+    \caption{Định nghĩa và đơn vị đo các chỉ số hiệu năng}
+    \vspace{0.2cm}
+    \begin{tabularx}{\textwidth}{|>{\raggedright\arraybackslash}p{3cm}|>{\raggedright\arraybackslash}p{2cm}|>{\raggedright\arraybackslash}X|>{\raggedright\arraybackslash}p{3cm}|}
+        \hline
+        \textbf{Chỉ số} & \textbf{Đơn vị} & \textbf{Định nghĩa} & \textbf{Công cụ đo} \\ \hline
+        \textbf{Throughput} (Thông lượng) & Mbps, Gbps & Lượng dữ liệu thực tế truyền qua mạng trong một đơn vị thời gian. Phản ánh hiệu quả sử dụng băng thông. & iperf3 (TCP mode) \\ \hline
+        \textbf{Delay/Latency} (Độ trễ) & ms & Thời gian gói tin đi từ nguồn đến đích (RTT/2 cho one-way delay). Bao gồm: propagation delay, transmission delay, queuing delay. & ping (ICMP) \\ \hline
+        \textbf{Packet Loss} (Mất gói) & \% & Tỷ lệ phần trăm gói tin bị mất trong quá trình truyền. Mất gói xảy ra khi bộ đệm router bị đầy (congestion) hoặc lỗi đường truyền. & ping, iperf3 (UDP) \\ \hline
+        \textbf{Jitter} (Biến động trễ) & ms & Sự biến thiên của delay giữa các gói tin liên tiếp. Jitter cao gây giật lag trong ứng dụng real-time (VoIP, video call). & iperf3 (UDP), mdev trong ping \\ \hline
+    \end{tabularx}
+\end{table}
+
+\textbf{Mối quan hệ giữa các chỉ số:} Jitter được tính toán từ biến thiên delay:
+\[
+J_i = |D_{i} - D_{i-1}|, \quad \bar{J} = \frac{1}{N-1}\sum_{i=2}^{N}|D_i - D_{i-1}|
+\]
+Trong đó $D_i$ là delay của gói tin thứ $i$, $\bar{J}$ là jitter trung bình.

@@ -1,0 +1,50 @@
+% =============================================================================
+% CHƯƠNG 1: GIỚI THIỆU
+% =============================================================================
+\chapter{Giới thiệu}
+
+\section{Bối cảnh và động lực nghiên cứu}
+
+Trong bối cảnh các doanh nghiệp hiện đại ngày càng mở rộng hoạt động ra nhiều chi nhánh ở các địa điểm khác nhau, nhu cầu kết nối hạ tầng mạng giữa các chi nhánh một cách hiệu quả, an toàn và kinh tế đang trở nên cấp thiết hơn bao giờ hết. Các ứng dụng doanh nghiệp như ERP, VoIP, hội nghị truyền hình và chia sẻ dữ liệu nội bộ đặt ra yêu cầu khắt khe về \textbf{băng thông, độ trễ thấp và tính liên tục} của dịch vụ.
+
+Công nghệ \textbf{Metro Ethernet} (MAN – Metropolitan Area Network dựa trên chuẩn Ethernet) nổi lên như một giải pháp hấp dẫn nhờ khả năng cung cấp kết nối tốc độ cao ở quy mô thành phố với chi phí thấp hơn so với các công nghệ WAN truyền thống (Frame Relay, ATM). Khi kết hợp với \textbf{MPLS (Multiprotocol Label Switching)}, Metro Ethernet không chỉ tăng tốc độ chuyển mạch mà còn cho phép định tuyến lưu lượng linh hoạt, hỗ trợ đa dịch vụ và phân tách hoàn toàn lưu lượng của các khách hàng khác nhau trên cùng hạ tầng ISP.
+
+\section{Mục tiêu nghiên cứu}
+
+Đề tài này nhắm tới các mục tiêu cụ thể sau:
+
+\begin{itemize}
+    \item \textbf{Thiết kế} mô hình mạng Metro Ethernet MAN sử dụng MPLS backbone để kết nối ba chi nhánh doanh nghiệp thông qua hạ tầng ISP.
+    \item \textbf{Triển khai mô phỏng} toàn bộ mô hình trên Mininet (Ubuntu 22.04), bao gồm ba kiến trúc LAN khác nhau tại mỗi chi nhánh và hệ thống router CE–PE–P của backbone MPLS.
+    \item \textbf{Đo lường và so sánh hiệu năng} các chỉ số: Throughput, Delay, Packet Loss và Jitter cho từng kiến trúc LAN khi lưu lượng đi qua backbone MPLS.
+    \item \textbf{Phân tích và đánh giá} ưu nhược điểm của ba kiến trúc LAN (Flat, 3-Tier, Leaf-Spine) và cơ chế hoạt động của MPLS so với IP routing truyền thống.
+\end{itemize}
+
+\section{Phạm vi và giới hạn}
+
+\textbf{Phạm vi:}
+\begin{itemize}
+    \item Mô phỏng trên môi trường Mininet (phần mềm) – không phải thiết bị vật lý thực tế.
+    \item Sử dụng Linux kernel MPLS (iproute2) để mô phỏng chuyển mạch nhãn; không dùng phần cứng MPLS chuyên dụng (Cisco, Juniper).
+    \item Ba chi nhánh đại diện cho ba kiến trúc LAN điển hình được nghiên cứu trong học phần.
+    \item Backbone MPLS gồm 2 router P (Core) và 3 router PE – đủ để minh họa cơ chế Push/Swap/Pop.
+\end{itemize}
+
+\textbf{Giới hạn:}
+\begin{itemize}
+    \item Số liệu đo lường trên Mininet là mô phỏng phần mềm; có thể khác với môi trường sản xuất thực.
+    \item Không triển khai đầy đủ MP-BGP và VPLS do hạn chế của môi trường Mininet cơ bản.
+    \item Mô phỏng tập trung vào MPLS Label Switching và so sánh kiến trúc LAN theo yêu cầu đề tài.
+\end{itemize}
+
+\section{Cấu trúc báo cáo}
+
+Báo cáo được tổ chức thành sáu chương:
+\begin{itemize}
+    \item \textbf{Chương 1} (hiện tại): Giới thiệu tổng quan, mục tiêu và phạm vi nghiên cứu.
+    \item \textbf{Chương 2}: Cơ sở lý thuyết về kiến trúc LAN, MPLS, Metro Ethernet và các chỉ số hiệu năng.
+    \item \textbf{Chương 3}: Thiết kế mô hình mạng – topology logic và bảng địa chỉ IP chi tiết.
+    \item \textbf{Chương 4}: Triển khai trên Mininet – môi trường, code topology và hướng dẫn chạy.
+    \item \textbf{Chương 5}: Kết quả đo lường, biểu đồ so sánh và phân tích.
+    \item \textbf{Chương 6}: Kết luận và hướng phát triển.
+\end{itemize}
