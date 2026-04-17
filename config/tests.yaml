@@ -1,0 +1,156 @@
+# =============================================================================
+# FILE: config/tests.yaml
+# MÔ TẢ: Cấu hình tất cả test case cho bộ công cụ đo hiệu năng
+#
+# Cấu trúc:
+#   - global: tham số chung cho tất cả test
+#   - test_pairs: danh sách cặp (src, dst) đại diện
+#   - load_levels: các mức băng thông thử nghiệm (Mbps)
+#   - scenarios: chi tiết từng kịch bản kiến trúc
+# =============================================================================
+
+# --------------------------------------------------
+# Tham số chung
+# --------------------------------------------------
+global:
+  repeat: 3                  # Số lần lặp mỗi test case (lấy trung bình)
+  ping_count: 100            # Số gói ping mỗi lần chạy
+  iperf_duration: 10         # Thời gian iperf (giây)
+  iperf_protocol: udp        # udp để đo jitter; tcp để đo throughput
+  output_dir: results/raw
+  csv_dir: results/csv
+  chart_dir: results/charts
+
+# --------------------------------------------------
+# Mức tải băng thông thử nghiệm (iperf3 -b)
+# --------------------------------------------------
+load_levels:
+  - label: "10Mbps"
+    bandwidth: "10M"
+  - label: "50Mbps"
+    bandwidth: "50M"
+  - label: "100Mbps"
+    bandwidth: "100M"
+
+# --------------------------------------------------
+# Test scenarios – mỗi scenario ứng với 1 kiến trúc LAN
+# --------------------------------------------------
+scenarios:
+
+  # --------------------------------------------------------
+  # Scenario 1: Chi nhánh 1 – Mạng phẳng (Flat)
+  # Đặc điểm: tất cả host cùng broadcast domain /24
+  # --------------------------------------------------------
+  flat:
+    name: "Flat Network (Chi nhánh 1)"
+    description: >
+      Mạng phẳng Layer 2: tất cả host trong 1 switch access, 
+      broadcast domain rộng, không phân lớp.
+    # Cặp host đại diện – đo trong nội bộ chi nhánh 1
+    intra_branch_pairs:
+      - src: host1
+        dst: host2
+        dst_ip: "10.1.0.102"
+        desc: "host1 → host2 (same flat LAN)"
+      - src: host1
+        dst: host3
+        dst_ip: "10.1.0.103"
+        desc: "host1 → host3 (same flat LAN)"
+    # Cặp host đại diện – đo xuyên backbone đến chi nhánh khác
+    cross_branch_pairs:
+      - src: host1
+        dst: admin1
+        dst_ip: "10.2.10.11"
+        desc: "host1 → admin1 (Flat→3-tier via MPLS)"
+      - src: host1
+        dst: web1
+        dst_ip: "10.3.10.11"
+        desc: "host1 → web1 (Flat→Leaf-Spine via MPLS)"
+
+  # --------------------------------------------------------
+  # Scenario 2: Chi nhánh 2 – 3-tier (Core-Dist-Access)
+  # Đặc điểm: phân tầng rõ ràng, VLAN, Inter-VLAN routing
+  # --------------------------------------------------------
+  three_tier:
+    name: "3-Tier Network (Chi nhánh 2)"
+    description: >
+      Mạng phân cấp 3 lớp: Core–Distribution–Access.
+      Phân VLAN theo nhóm: Admin(10), Lab(20), Guest(30).
+      Inter-VLAN routing tại ce2_lan.
+    intra_branch_pairs:
+      - src: admin1
+        dst: admin2
+        dst_ip: "10.2.10.12"
+        desc: "admin1 → admin2 (same VLAN10)"
+      - src: admin1
+        dst: lab1
+        dst_ip: "10.2.20.21"
+        desc: "admin1 → lab1 (VLAN10→VLAN20, inter-VLAN)"
+      - src: admin1
+        dst: guest1
+        dst_ip: "10.2.30.31"
+        desc: "admin1 → guest1 (VLAN10→VLAN30, inter-VLAN)"
+    cross_branch_pairs:
+      - src: admin1
+        dst: host1
+        dst_ip: "10.1.0.101"
+        desc: "admin1 → host1 (3-tier→Flat via MPLS)"
+      - src: admin1
+        dst: web1
+        dst_ip: "10.3.10.11"
+        desc: "admin1 → web1 (3-tier→Leaf-Spine via MPLS)"
+
+  # --------------------------------------------------------
+  # Scenario 3: Chi nhánh 3 – Leaf-Spine (2-tier)
+  # Đặc điểm: any-to-any path qua 2 hop, băng thông cao
+  # --------------------------------------------------------
+  leaf_spine:
+    name: "Leaf-Spine Network (Chi nhánh 3)"
+    description: >
+      Kiến trúc Clos (Leaf-Spine): 2 spine × 3 leaf.
+      Mọi leaf kết nối tất cả spine → any-to-any path 2 hops.
+      Phân vùng: Web(leaf1), DNS(leaf2), DB(leaf3).
+    intra_branch_pairs:
+      - src: web1
+        dst: web2
+        dst_ip: "10.3.10.12"
+        desc: "web1 → web2 (same leaf1)"
+      - src: web1
+        dst: dns1
+        dst_ip: "10.3.20.21"
+        desc: "web1 → dns1 (leaf1→spine→leaf2, 2 hops)"
+      - src: web1
+        dst: db1
+        dst_ip: "10.3.30.31"
+        desc: "web1 → db1 (leaf1→spine→leaf3, 2 hops)"
+      - src: dns1
+        dst: db2
+        dst_ip: "10.3.30.32"
+        desc: "dns1 → db2 (leaf2→spine→leaf3, 2 hops)"
+    cross_branch_pairs:
+      - src: web1
+        dst: host1
+        dst_ip: "10.1.0.101"
+        desc: "web1 → host1 (Leaf-Spine→Flat via MPLS)"
+      - src: web1
+        dst: admin1
+        dst_ip: "10.2.10.11"
+        desc: "web1 → admin1 (Leaf-Spine→3-tier via MPLS)"
+
+# --------------------------------------------------
+# Comparison pairs – đo trực tiếp giữa 3 kiến trúc
+# (host đại diện từ mỗi chi nhánh)
+# --------------------------------------------------
+comparison_pairs:
+  - name: "flat_to_3tier"
+    src: host1
+    dst_ip: "10.2.10.11"
+    path_desc: "Flat → (CE1→PE1→P→PE2→CE2) → 3-tier"
+  - name: "flat_to_leafspine"
+    src: host1
+    dst_ip: "10.3.10.11"
+    path_desc: "Flat → (CE1→PE1→P→PE3→CE3) → Leaf-Spine"
+  - name: "3tier_to_leafspine"
+    src: admin1
+    dst_ip: "10.3.10.11"
+    path_desc: "3-tier → (CE2→PE2→P→PE3→CE3) → Leaf-Spine"
