@@ -1,0 +1,193 @@
+% ============================================================
+% PREAMBLE - Bao cao Metro Ethernet MPLS
+% Compile: pdflatex (Overleaf TeX Live 2023) - UTF-8
+% ============================================================
+
+% --- Encoding & Language (thu tu quan trong) ---
+\usepackage[utf8]{inputenc}
+\usepackage[T5]{fontenc}
+\usepackage[utf8]{vietnam}
+\usepackage{times}
+
+% --- Page Geometry ---
+\usepackage{geometry}
+\geometry{a4paper, top=3cm, bottom=3cm, left=3.5cm, right=2cm}
+
+% --- Math ---
+\usepackage{amsmath}
+\usepackage{amssymb}
+
+% --- Tables ---
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{multirow}
+\usepackage{tabularx}
+\usepackage{longtable}
+
+% --- Lists ---
+\usepackage{enumitem}
+
+% --- Figures ---
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{subcaption}
+\usepackage{caption}
+\captionsetup[table]{skip=4pt, aboveskip=4pt, belowskip=2pt}
+\captionsetup[figure]{skip=4pt, aboveskip=4pt, belowskip=2pt}
+
+% --- Layout ---
+\usepackage{setspace}
+\usepackage{indentfirst}
+\usepackage{ragged2e}
+\usepackage{fancyhdr}
+\setlength{\headheight}{15pt}
+\usepackage{tocloft}
+\usepackage{titlesec}
+\usepackage{etoolbox}
+\usepackage{adjustbox}
+
+% --- Links (Overleaf-safe) ---
+\usepackage[unicode=true]{hyperref}
+\hypersetup{
+    hidelinks,
+    pdfencoding=auto,
+}
+
+% --- Colors ---
+\usepackage{xcolor}
+\usepackage{soul}
+
+% --- Code Listings ---
+\usepackage{listings}
+\usepackage{fancyvrb}
+\usepackage{fvextra}
+
+% --- Boxes ---
+\usepackage{tcolorbox}
+
+% --- Courier font for monospace ---
+\usepackage{courier}
+
+% --- Misc ---
+\usepackage{xspace}
+
+% =============================================================
+% Page Style
+% =============================================================
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[C]{\thepage}
+\renewcommand{\headrulewidth}{0pt}
+
+\fancypagestyle{plain}{
+  \fancyhf{}
+  \fancyhead[C]{\thepage}
+  \renewcommand{\headrulewidth}{0pt}
+}
+
+% =============================================================
+% Custom Section Numbering
+% =============================================================
+\renewcommand{\thesection}{\arabic{section}}
+\renewcommand{\thesubsection}{\thesection.\arabic{subsection}}
+\renewcommand{\thesubsubsection}{\thesection.\arabic{subsection}.\arabic{subsubsection}}
+
+% =============================================================
+% Verbatim Environments
+% =============================================================
+\DefineVerbatimEnvironment{codeblock}{Verbatim}{
+    fontsize=\small,
+    breaklines=true,
+    breaksymbolleft={}
+}
+
+% =============================================================
+% Color Definitions
+% =============================================================
+\definecolor{codebg}{rgb}{0.95,0.95,0.97}
+\definecolor{codeframe}{rgb}{0.55,0.55,0.65}
+\definecolor{keywordcolor}{rgb}{0.0,0.0,0.72}
+\definecolor{commentcolor}{rgb}{0.15,0.48,0.15}
+\definecolor{stringcolor}{rgb}{0.62,0.10,0.10}
+\definecolor{termcolor}{rgb}{0.93,0.97,0.93}
+\definecolor{termframe}{rgb}{0.25,0.55,0.25}
+
+% =============================================================
+% Listings Styles
+% =============================================================
+\lstdefinestyle{pythonstyle}{
+    language=Python,
+    basicstyle=\ttfamily\footnotesize,
+    breaklines=true,
+    breakatwhitespace=false,
+    frame=single,
+    framesep=4pt,
+    rulecolor=\color{codeframe},
+    backgroundcolor=\color{codebg},
+    keywordstyle=\color{keywordcolor}\bfseries,
+    commentstyle=\color{commentcolor}\itshape,
+    stringstyle=\color{stringcolor},
+    numberstyle=\tiny\color{gray},
+    numbers=left,
+    numbersep=8pt,
+    showstringspaces=false,
+    tabsize=4,
+    keepspaces=true,
+    captionpos=b,
+    morekeywords={self,cls,True,False,None},
+}
+
+\lstdefinestyle{bashstyle}{
+    language=bash,
+    basicstyle=\ttfamily\footnotesize,
+    breaklines=true,
+    frame=single,
+    framesep=4pt,
+    rulecolor=\color{termframe},
+    backgroundcolor=\color{termcolor},
+    keywordstyle=\color{blue!80!black}\bfseries,
+    commentstyle=\color{green!50!black}\itshape,
+    numberstyle=\tiny\color{gray},
+    numbers=none,
+    showstringspaces=false,
+    tabsize=2,
+    keepspaces=true,
+    captionpos=b,
+}
+
+\lstdefinestyle{termstyle}{
+    basicstyle=\ttfamily\footnotesize,
+    breaklines=true,
+    frame=single,
+    framesep=4pt,
+    rulecolor=\color{termframe},
+    backgroundcolor=\color{termcolor},
+    numbers=none,
+    showstringspaces=false,
+    keepspaces=true,
+    captionpos=b,
+}
+
+% Default
+\lstset{style=pythonstyle}
+
+% =============================================================
+% TOC Formatting
+% =============================================================
+\renewcommand{\cftchappresnum}{Ch\uhorn{}\ohorn{}ng~}
+\renewcommand{\cftchapaftersnum}{.\hspace{0.8em}}
+\settowidth{\cftchapnumwidth}{Chxxx10.\hspace{0.8em}}
+
+\renewcommand{\cftsecaftersnum}{.\hspace{0.4em}}
+\settowidth{\cftsecnumwidth}{1.9.\hspace{0.4em}}
+
+\renewcommand{\cftsubsecaftersnum}{.\hspace{0.4em}}
+\settowidth{\cftsubsecnumwidth}{1.9.9.\hspace{0.4em}}
+
+\renewcommand{\cftfigpresnum}{H\`{\i}nh~}
+\renewcommand{\cftfigaftersnum}{.\hspace{0.5em}}
+\settowidth{\cftfignumwidth}{Hxxx99.99.\hspace{0.4em}}
+
+\renewcommand{\cfttabpresnum}{B\h{a}ng~}
+\renewcommand{\cfttabaftersnum}{.\hspace{0.5em}}
+\settowidth{\cfttabnumwidth}{Bxxx99.99.\hspace{0.4em}}

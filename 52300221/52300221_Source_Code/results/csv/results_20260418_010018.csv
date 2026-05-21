@@ -1,0 +1,43 @@
+scenario,arch_name,test_type,src_host,dst_ip,description,load_level,bandwidth_target,avg_delay_ms,min_delay_ms,max_delay_ms,ping_loss_pct,throughput_mbps,jitter_ms,udp_loss_pct,tcp_throughput_mbps,timestamp,repeat
+flat,Flat Network (Chi nhánh 1),intra,host1,10.1.0.102,host1→host2 [intra-flat],10Mbps,10M,0.0523,0.03,0.7,0.0,9.9987,0.7588,0.0,48771.4453,20260418_010018,3
+flat,Flat Network (Chi nhánh 1),intra,host1,10.1.0.102,host1→host2 [intra-flat],50Mbps,50M,0.0523,0.03,0.7,0.0,49.9963,0.1565,0.0,48771.4453,20260418_010018,3
+flat,Flat Network (Chi nhánh 1),intra,host1,10.1.0.102,host1→host2 [intra-flat],100Mbps,100M,0.0523,0.03,0.7,0.0,99.983,0.0686,0.0,48771.4453,20260418_010018,3
+flat,Flat Network (Chi nhánh 1),intra,host1,10.1.0.103,host1→host3 [intra-flat],10Mbps,10M,0.0527,0.035,0.657,0.0,9.9983,0.8368,0.0,44341.2823,20260418_010018,3
+flat,Flat Network (Chi nhánh 1),intra,host1,10.1.0.103,host1→host3 [intra-flat],50Mbps,50M,0.0527,0.035,0.657,0.0,49.993,0.1626,0.0,44341.2823,20260418_010018,3
+flat,Flat Network (Chi nhánh 1),intra,host1,10.1.0.103,host1→host3 [intra-flat],100Mbps,100M,0.0527,0.035,0.657,0.0,99.9743,0.1868,0.0,44341.2823,20260418_010018,3
+flat,Flat Network (Chi nhánh 1),cross,host1,10.2.10.11,host1→admin1 [flat→3tier],10Mbps,10M,0.1047,0.0797,0.389,0.0,9.9987,0.9715,0.0,22735.568,20260418_010018,3
+flat,Flat Network (Chi nhánh 1),cross,host1,10.2.10.11,host1→admin1 [flat→3tier],50Mbps,50M,0.1047,0.0797,0.389,0.0,49.9947,0.1969,0.0,22735.568,20260418_010018,3
+flat,Flat Network (Chi nhánh 1),cross,host1,10.2.10.11,host1→admin1 [flat→3tier],100Mbps,100M,0.1047,0.0797,0.389,0.0,99.9873,0.0893,0.0167,22735.568,20260418_010018,3
+flat,Flat Network (Chi nhánh 1),cross,host1,10.3.10.11,host1→web1 [flat→leafspine],10Mbps,10M,0.11,0.0777,0.7203,0.0,9.9983,0.8527,0.0,22648.7447,20260418_010018,3
+flat,Flat Network (Chi nhánh 1),cross,host1,10.3.10.11,host1→web1 [flat→leafspine],50Mbps,50M,0.11,0.0777,0.7203,0.0,49.992,0.182,0.0,22648.7447,20260418_010018,3
+flat,Flat Network (Chi nhánh 1),cross,host1,10.3.10.11,host1→web1 [flat→leafspine],100Mbps,100M,0.11,0.0777,0.7203,0.0,99.9887,0.0725,0.0,22648.7447,20260418_010018,3
+3tier,3-Tier Network (Chi nhánh 2),intra,admin1,10.2.10.12,admin1→admin2 [same-VLAN10],10Mbps,10M,0.0523,0.033,0.479,0.0,9.999,0.8108,0.0,49320.946,20260418_010018,3
+3tier,3-Tier Network (Chi nhánh 2),intra,admin1,10.2.10.12,admin1→admin2 [same-VLAN10],50Mbps,50M,0.0523,0.033,0.479,0.0,49.9937,0.1645,0.0,49320.946,20260418_010018,3
+3tier,3-Tier Network (Chi nhánh 2),intra,admin1,10.2.10.12,admin1→admin2 [same-VLAN10],100Mbps,100M,0.0523,0.033,0.479,0.0,99.982,0.1074,0.0,49320.946,20260418_010018,3
+3tier,3-Tier Network (Chi nhánh 2),intra,admin1,10.2.20.21,admin1→lab1 [inter-VLAN],10Mbps,10M,0.0757,0.049,0.4563,0.0,9.999,0.9006,0.0,31336.874,20260418_010018,3
+3tier,3-Tier Network (Chi nhánh 2),intra,admin1,10.2.20.21,admin1→lab1 [inter-VLAN],50Mbps,50M,0.0757,0.049,0.4563,0.0,49.991,0.1311,0.0,31336.874,20260418_010018,3
+3tier,3-Tier Network (Chi nhánh 2),intra,admin1,10.2.20.21,admin1→lab1 [inter-VLAN],100Mbps,100M,0.0757,0.049,0.4563,0.0,99.9887,0.0331,0.0,31336.874,20260418_010018,3
+3tier,3-Tier Network (Chi nhánh 2),intra,admin1,10.2.30.31,admin1→guest1 [inter-VLAN],10Mbps,10M,0.085,0.0527,0.8833,0.0,9.9993,0.8591,0.0,28597.6453,20260418_010018,3
+3tier,3-Tier Network (Chi nhánh 2),intra,admin1,10.2.30.31,admin1→guest1 [inter-VLAN],50Mbps,50M,0.085,0.0527,0.8833,0.0,49.9953,0.1158,0.0,28597.6453,20260418_010018,3
+3tier,3-Tier Network (Chi nhánh 2),intra,admin1,10.2.30.31,admin1→guest1 [inter-VLAN],100Mbps,100M,0.085,0.0527,0.8833,0.0,99.991,0.0477,0.0067,28597.6453,20260418_010018,3
+3tier,3-Tier Network (Chi nhánh 2),cross,admin1,10.1.0.101,admin1→host1 [3tier→flat],10Mbps,10M,0.1073,0.06,0.7717,0.0,9.999,0.9351,0.0,24333.5707,20260418_010018,3
+3tier,3-Tier Network (Chi nhánh 2),cross,admin1,10.1.0.101,admin1→host1 [3tier→flat],50Mbps,50M,0.1073,0.06,0.7717,0.0,49.9943,0.1052,0.0,24333.5707,20260418_010018,3
+3tier,3-Tier Network (Chi nhánh 2),cross,admin1,10.1.0.101,admin1→host1 [3tier→flat],100Mbps,100M,0.1073,0.06,0.7717,0.0,99.9793,0.1518,0.0,24333.5707,20260418_010018,3
+3tier,3-Tier Network (Chi nhánh 2),cross,admin1,10.3.10.11,admin1→web1 [3tier→leafspine],10Mbps,10M,0.1133,0.088,0.8947,0.0,9.9987,0.9123,0.0,22127.2273,20260418_010018,3
+3tier,3-Tier Network (Chi nhánh 2),cross,admin1,10.3.10.11,admin1→web1 [3tier→leafspine],50Mbps,50M,0.1133,0.088,0.8947,0.0,49.9947,0.2403,0.0,22127.2273,20260418_010018,3
+3tier,3-Tier Network (Chi nhánh 2),cross,admin1,10.3.10.11,admin1→web1 [3tier→leafspine],100Mbps,100M,0.1133,0.088,0.8947,0.0,99.9857,0.1502,0.0,22127.2273,20260418_010018,3
+leafspine,Leaf-Spine Network (Chi nhánh 3),intra,web1,10.3.10.12,web1→web2 [same-leaf1],10Mbps,10M,0.0537,0.0347,0.7443,0.0,9.999,0.7746,0.0,49455.9463,20260418_010018,3
+leafspine,Leaf-Spine Network (Chi nhánh 3),intra,web1,10.3.10.12,web1→web2 [same-leaf1],50Mbps,50M,0.0537,0.0347,0.7443,0.0,49.9917,0.1362,0.0,49455.9463,20260418_010018,3
+leafspine,Leaf-Spine Network (Chi nhánh 3),intra,web1,10.3.10.12,web1→web2 [same-leaf1],100Mbps,100M,0.0537,0.0347,0.7443,0.0,99.9877,0.0397,0.0,49455.9463,20260418_010018,3
+leafspine,Leaf-Spine Network (Chi nhánh 3),intra,web1,10.3.20.21,"web1→dns1 [leaf1→leaf2, 2hop]",10Mbps,10M,0.0713,0.0467,0.2997,0.0,9.999,0.719,0.0,30510.75,20260418_010018,3
+leafspine,Leaf-Spine Network (Chi nhánh 3),intra,web1,10.3.20.21,"web1→dns1 [leaf1→leaf2, 2hop]",50Mbps,50M,0.0713,0.0467,0.2997,0.0,49.9937,0.0504,0.0,30510.75,20260418_010018,3
+leafspine,Leaf-Spine Network (Chi nhánh 3),intra,web1,10.3.20.21,"web1→dns1 [leaf1→leaf2, 2hop]",100Mbps,100M,0.0713,0.0467,0.2997,0.0,99.9827,0.1095,0.07,30510.75,20260418_010018,3
+leafspine,Leaf-Spine Network (Chi nhánh 3),intra,web1,10.3.30.31,"web1→db1 [leaf1→leaf3, 2hop]",10Mbps,10M,0.0767,0.0503,0.628,0.0,9.999,0.9829,0.0,27541.823,20260418_010018,3
+leafspine,Leaf-Spine Network (Chi nhánh 3),intra,web1,10.3.30.31,"web1→db1 [leaf1→leaf3, 2hop]",50Mbps,50M,0.0767,0.0503,0.628,0.0,49.9917,0.1523,0.0,27541.823,20260418_010018,3
+leafspine,Leaf-Spine Network (Chi nhánh 3),intra,web1,10.3.30.31,"web1→db1 [leaf1→leaf3, 2hop]",100Mbps,100M,0.0767,0.0503,0.628,0.0,99.9863,0.0813,0.0,27541.823,20260418_010018,3
+leafspine,Leaf-Spine Network (Chi nhánh 3),cross,web1,10.1.0.101,web1→host1 [leafspine→flat],10Mbps,10M,0.1103,0.075,0.613,0.0,9.9993,0.9509,0.0,22105.3047,20260418_010018,3
+leafspine,Leaf-Spine Network (Chi nhánh 3),cross,web1,10.1.0.101,web1→host1 [leafspine→flat],50Mbps,50M,0.1103,0.075,0.613,0.0,49.9943,0.1602,0.0,22105.3047,20260418_010018,3
+leafspine,Leaf-Spine Network (Chi nhánh 3),cross,web1,10.1.0.101,web1→host1 [leafspine→flat],100Mbps,100M,0.1103,0.075,0.613,0.0,99.987,0.1021,0.0267,22105.3047,20260418_010018,3
+leafspine,Leaf-Spine Network (Chi nhánh 3),cross,web1,10.2.10.11,web1→admin1 [leafspine→3tier],10Mbps,10M,0.1143,0.0753,0.7813,0.0,9.9987,0.8523,0.0,22208.9747,20260418_010018,3
+leafspine,Leaf-Spine Network (Chi nhánh 3),cross,web1,10.2.10.11,web1→admin1 [leafspine→3tier],50Mbps,50M,0.1143,0.0753,0.7813,0.0,49.993,0.1981,0.0,22208.9747,20260418_010018,3
+leafspine,Leaf-Spine Network (Chi nhánh 3),cross,web1,10.2.10.11,web1→admin1 [leafspine→3tier],100Mbps,100M,0.1143,0.0753,0.7813,0.0,99.99,0.0915,0.0967,22208.9747,20260418_010018,3

@@ -1,0 +1,27 @@
+% frontmatter/abstract.tex
+\begin{center}
+    {\large \textbf{TÓM TẮT}}
+\end{center}
+\addcontentsline{toc}{section}{TÓM TẮT}
+\vspace{0.3cm}
+
+\noindent Đề tài trình bày việc \textbf{thiết kế và triển khai mô hình mạng Metro Ethernet} sử dụng công nghệ \textbf{MPLS (Multiprotocol Label Switching)} nhằm kết nối ba chi nhánh doanh nghiệp thông qua hạ tầng của nhà cung cấp dịch vụ (ISP). Toàn bộ hệ thống được mô phỏng trên nền tảng \textbf{Mininet} và \textbf{Ubuntu 22.04}, sử dụng Linux Kernel MPLS (iproute2).
+
+\vspace{0.3cm}
+\noindent \textbf{Mục tiêu:} Nghiên cứu và so sánh hiệu năng mạng của ba kiến trúc LAN khác nhau tại mỗi chi nhánh -- Mạng phẳng (Flat Network), Mạng 3 lớp truyền thống (Core--Distribution--Access), và Mạng Leaf-Spine -- khi hoạt động qua cùng một backbone MPLS.
+
+\vspace{0.3cm}
+\noindent \textbf{Phương pháp:} Sử dụng Mininet để mô phỏng topology đầy đủ bao gồm các router CE (Customer Edge), PE (Provider Edge 3 node), P (Provider Core 4 node). Cơ chế chuyển mạch nhãn MPLS (Push/Swap/Pop) được triển khai thông qua Linux Kernel module \texttt{mpls\_router} và iproute2. Đo lường hiệu năng tự động bằng \texttt{iperf3} (Throughput UDP/TCP, Jitter, Packet Loss) và \texttt{ping} (Delay/RTT), lặp lại 3 lần mỗi kịch bản (42 record tổng cộng).
+
+\vspace{0.3cm}
+\noindent \textbf{Kết quả chính:}
+\begin{itemize}
+    \item \textbf{Backbone MPLS} hoạt động ổn định: packet loss $\approx$ 0\%, delay cross-branch $\approx$ \textbf{0.10--0.115 ms}, throughput đạt $\approx$ \textbf{99.98--99.99\%} mức tải UDP.
+    \item \textbf{Flat Network}: delay nội bộ 0.052 ms, đơn giản nhất nhưng tiềm ẩn rủi ro broadcast storm khi mở rộng.
+    \item \textbf{3-Tier CDA}: delay inter-VLAN 0.076--0.085 ms, hỗ trợ phân vùng VLAN và bảo mật ACL linh hoạt.
+    \item \textbf{Leaf-Spine}: jitter nội bộ thấp nhất (0.040 ms), kiến trúc full-mesh loại bỏ STP, phù hợp nhất cho ứng dụng real-time và Data Center.
+    \item Kiến trúc LAN nội bộ \textbf{không ảnh hưởng đáng kể} đến hiệu năng cross-branch do bottleneck là backbone MPLS.
+\end{itemize}
+
+\vspace{0.3cm}
+\noindent \textbf{Từ khóa:} Metro Ethernet, MPLS, Label Switching, Push/Swap/Pop, Mininet, Flat Network, 3-Tier CDA, Leaf-Spine, Throughput, Delay, Jitter, Packet Loss, LSP, PE Router, P Router, CE Router.

@@ -1,0 +1,131 @@
+% =============================================================================
+% CHƯƠNG 6: KẾT LUẬN VÀ HƯỚNG PHÁT TRIỂN
+% =============================================================================
+\chapter{Kết luận và hướng phát triển}
+
+\section{Tóm tắt kết quả đạt được}
+
+Đề tài đã hoàn thành đầy đủ 6 mục tiêu đề ra:
+
+\begin{enumerate}
+    \item \textbf{Thiết kế mô hình mạng} Metro Ethernet MPLS kết nối 3 chi nhánh doanh nghiệp thông qua backbone ISP với đầy đủ các thành phần CE, PE, P router (3PE + 4P) và 3 router LAN (CE1\_lan, CE2\_lan, CE3\_lan).
+
+    \item \textbf{Triển khai thành công trên Mininet} với cả 3 kiến trúc LAN:
+    \begin{itemize}
+        \item Chi nhánh 1: Mạng phẳng (Flat Network) -- 1 switch, 4 host.
+        \item Chi nhánh 2: Mạng 3 lớp (Core--Distribution--Access) -- 7 switch, 6 host, 3 VLAN.
+        \item Chi nhánh 3: Mạng Leaf-Spine -- 5 switch (2 Spine + 3 Leaf), 6 server.
+    \end{itemize}
+
+    \item \textbf{Mô phỏng MPLS Label Switching} (Push/Swap/Pop) thông qua Linux Kernel MPLS (iproute2 + module \texttt{mpls\_router}) với 6 LSP đầy đủ kết nối 3 chiều giữa các PE.
+
+    \item \textbf{Xây dựng bộ đo lường tự động} gồm \texttt{run\_measurements.py}, \texttt{parse\_ping.py}, \texttt{parse\_iperf.py}, \texttt{aggregate\_results.py}, \texttt{plot\_results.py} -- thu thập, phân tích và trực quan hóa số liệu tự động.
+
+    \item \textbf{Đo lường và phân tích} 4 chỉ số hiệu năng (Throughput, Delay, Packet Loss, Jitter) cho 14 kịch bản, lặp lại 3 lần mỗi kịch bản (42 record tổng cộng).
+
+    \item \textbf{Phân tích so sánh} hiệu năng của 3 kiến trúc LAN trong bối cảnh Metro Ethernet MPLS.
+\end{enumerate}
+
+\subsection{Kết luận về hiệu năng đo lường thực tế}
+
+\begin{table}[H]
+    \centering
+    \caption{Tổng hợp kết quả đo lường thực tế -- Cross-branch (100 Mbps UDP)}
+    \vspace{0.2cm}
+    \small
+    \begin{tabularx}{\textwidth}{|>{\raggedright\arraybackslash}p{2.8cm}|c|c|c|c|}
+        \hline
+        \textbf{Kịch bản} & \textbf{Delay (ms)} & \textbf{Tput (Mbps)} & \textbf{Jitter (ms)} & \textbf{Loss (\%)} \\ \hline
+        Flat $\to$ 3-Tier & 0.1047 & 99.987 & 0.089 & 0.017 \\ \hline
+        Flat $\to$ Leaf-Sp. & 0.1100 & 99.989 & 0.073 & 0.000 \\ \hline
+        3-Tier $\to$ Flat & 0.1073 & 99.979 & 0.152 & 0.000 \\ \hline
+        3-Tier $\to$ Leaf-Sp. & 0.1133 & 99.986 & 0.150 & 0.000 \\ \hline
+        Leaf-Sp. $\to$ Flat & 0.1103 & 99.987 & 0.102 & 0.027 \\ \hline
+        Leaf-Sp. $\to$ 3-Tier & 0.1143 & 99.990 & 0.092 & 0.097 \\ \hline
+        \textbf{Trung bình} & \textbf{0.110} & \textbf{99.986} & \textbf{0.110} & \textbf{0.024} \\ \hline
+    \end{tabularx}
+    \label{tab:summary_cross}
+\end{table}
+
+\textbf{Nhận xét tổng quát từ kết quả thực nghiệm:}
+\begin{itemize}
+    \item Throughput UDP đạt \textbf{99.97--99.99\%} mức tải trong hầu hết kịch bản $\to$ mạng MPLS hoạt động ổn định, không gây thất thoát băng thông đáng kể.
+    \item Delay cross-branch ổn định trong khoảng \textbf{0.10--0.115 ms} $\to$ backbone MPLS 4P hoạt động nhất quán.
+    \item Packet loss \textbf{$\approx$ 0\%} dưới tải bình thường $\to$ cấu hình MPLS và STP hoạt động đúng, không có vòng lặp hay mất gói bất thường.
+\end{itemize}
+
+\subsection{Kết luận về 3 kiến trúc LAN}
+
+\begin{table}[H]
+    \centering
+    \caption{Đánh giá tổng hợp 3 kiến trúc LAN dựa trên kết quả đo lường thực tế}
+    \vspace{0.2cm}
+    \small
+    \begin{tabularx}{\textwidth}{|>{\raggedright\arraybackslash}p{2.2cm}|c|c|c|>{\raggedright\arraybackslash}X|}
+        \hline
+        \textbf{Kiến trúc} & \textbf{Delay nội bộ} & \textbf{Jitter} & \textbf{Độ phức tạp} & \textbf{Phù hợp nhất với} \\ \hline
+        Flat Network & 0.052 ms & Trung bình & Thấp & Văn phòng nhỏ ($<$50 thiết bị), dễ triển khai \\ \hline
+        3-Tier (CDA) & 0.052--0.085 ms & Trung bình & Cao & Doanh nghiệp vừa, cần VLAN, bảo mật ACL \\ \hline
+        Leaf-Spine & \textbf{0.054--0.077 ms} & \textbf{Thấp nhất} & Trung bình & Data Center, server farm, ứng dụng real-time \\ \hline
+    \end{tabularx}
+    \label{tab:arch_summary}
+\end{table}
+
+\textbf{Phát hiện quan trọng:} Trong bối cảnh Metro Ethernet MPLS, \textbf{kiến trúc LAN nội bộ không phải nút thắt cổ chai}. Bottleneck chính là backbone MPLS (số hop CE $\to$ PE $\to$ P $\to$ PE $\to$ CE). Do đó, throughput cross-branch tương đương nhau giữa 3 kiến trúc. Sự khác biệt thể hiện rõ nhất \textbf{trong kịch bản intra-branch}: Leaf-Spine có jitter thấp nhất (0.040 ms), phù hợp nhất cho ứng dụng real-time.
+
+\subsection{Kết luận về MPLS}
+
+MPLS chứng minh là công nghệ phù hợp cho Metro Ethernet backbone vì:
+\begin{itemize}
+    \item \textbf{Kết nối đa chi nhánh linh hoạt}: 6 LSP đầy đủ kết nối 3 chiều giữa 3 PE, packet loss = 0\%.
+    \item \textbf{Tách biệt lưu lượng}: Mỗi LSP dùng nhãn riêng (100--310), đảm bảo không "rò rỉ" lưu lượng giữa các khách hàng.
+    \item \textbf{Logic Push/Swap/Pop}: Hoạt động chính xác, có thể xác minh qua \texttt{ip -f mpls route show} và \texttt{tcpdump}.
+    \item \textbf{Khả năng mở rộng}: Thêm chi nhánh mới chỉ cần thêm PE router và cấu hình LSP mới -- không ảnh hưởng các PE hiện có.
+\end{itemize}
+
+\section{Hướng phát triển}
+
+\textbf{1. Tích hợp giao thức động OSPF + LDP (FRRouting):}
+\begin{itemize}
+    \item Dùng FRRouting (FRR) với OSPF và LDP chạy trên các router PE, P trong Mininet.
+    \item Nhãn MPLS được phân phối tự động qua LDP -- không cần cấu hình tĩnh thủ công.
+    \item OSPF cung cấp topology database để LDP biết đường đi và phân phối nhãn theo.
+\end{itemize}
+
+\textbf{2. Triển khai VPLS hoàn chỉnh (Layer 2 VPN):}
+\begin{itemize}
+    \item Dùng Open vSwitch với MPLS Pseudowire để mô phỏng VPLS.
+    \item Các chi nhánh sẽ giao tiếp ở Layer 2 như đang cùng một LAN vật lý -- kể cả broadcast và VLAN tag.
+\end{itemize}
+
+\textbf{3. Tích hợp QoS (Quality of Service):}
+\begin{itemize}
+    \item Dùng \texttt{tc} (Traffic Control) và MPLS EXP bits để ưu tiên lưu lượng VoIP/video.
+    \item Đo tác động của QoS lên jitter và packet loss khi mạng congested (tải cao hơn 80\%).
+\end{itemize}
+
+\textbf{4. Mở rộng quy mô và thêm chi nhánh:}
+\begin{itemize}
+    \item Thêm chi nhánh 4, 5 vào backbone MPLS để test khả năng mở rộng.
+    \item Mô phỏng failover khi một PE hoặc P router bị sự cố (MPLS Fast Reroute -- FRR).
+\end{itemize}
+
+\textbf{5. Chạy trên GNS3 hoặc EVE-NG với router thực:}
+\begin{itemize}
+    \item Dùng Cisco IOS hoặc Juniper Junos image trong GNS3 để có MPLS phần cứng thực sự.
+    \item So sánh số liệu với môi trường Mininet để đánh giá độ tin cậy của mô phỏng phần mềm.
+\end{itemize}
+
+\textbf{6. Tự động hóa cấu hình bằng Ansible/NETCONF:}
+\begin{itemize}
+    \item Viết playbook Ansible để tự động cấu hình toàn bộ hệ thống MPLS.
+    \item Tích hợp với hệ thống giám sát (Prometheus + Grafana) để monitor real-time các chỉ số hiệu năng.
+\end{itemize}
+
+\section{Lời kết}
+
+Đề tài đã thể hiện được triết lý thiết kế mạng Metro Ethernet hiện đại: kết hợp \textbf{kiến trúc LAN phù hợp} tại từng chi nhánh với \textbf{backbone MPLS linh hoạt} của ISP để tạo ra hạ tầng kết nối đa chi nhánh có thể mở rộng, dễ quản lý và đáp ứng các yêu cầu SLA khắt khe của doanh nghiệp.
+
+Kết quả đo lường thực nghiệm trên Mininet (Ubuntu 22.04) khẳng định rằng hệ thống hoạt động đúng với \textbf{packet loss $\approx$ 0\%}, \textbf{delay cross-branch $\approx$ 0.11 ms}, và \textbf{throughput $\approx$ 100\% mức tải}. Cơ chế Push/Swap/Pop của MPLS được xác minh qua \texttt{ip -f mpls route} và \texttt{tcpdump}.
+
+Môi trường Mininet, tuy là mô phỏng phần mềm, đã cung cấp nền tảng học tập và thực hành hiệu quả, giúp hiểu rõ cơ chế hoạt động của MPLS và sự khác biệt giữa các kiến trúc LAN mà không cần đầu tư hạ tầng phần cứng đắt tiền.

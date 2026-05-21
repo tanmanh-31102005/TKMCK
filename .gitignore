@@ -1,0 +1,10 @@
+# Ignore local git backup directories
+**/.git_backup/
+
+# Ignore python caches
+**/__pycache__/
+*.pyc
+
+# OS generated files
+.DS_Store
+Thumbs.db

@@ -1,0 +1,94 @@
+\documentclass[a4paper,12pt]{report}
+
+\input{preamble.tex}
+
+% Spacing and indent
+\onehalfspacing
+\setlength{\parindent}{1.25cm}
+\setlength{\parskip}{3pt}
+
+% Chapter format
+\titleformat{\chapter}[hang]
+  {\normalfont\bfseries\fontsize{16pt}{20pt}\selectfont}
+  {CHƯƠNG \thechapter.}
+  {0.6em}
+  {\MakeUppercase}
+\titlespacing*{\chapter}{0pt}{6pt}{12pt}
+
+% Section format
+\titleformat{\section}
+  {\normalfont\bfseries\fontsize{14pt}{17pt}\selectfont}
+  {\thesection.}
+  {0.5em}
+  {}
+\titlespacing*{\section}{0pt}{8pt}{6pt}
+
+% Subsection format
+\titleformat{\subsection}
+  {\normalfont\bfseries\fontsize{13pt}{16pt}\selectfont}
+  {\thesubsection.}
+  {0.5em}
+  {}
+\titlespacing*{\subsection}{0pt}{6pt}{4pt}
+
+% List settings
+\setlist{
+    leftmargin=1.5cm,
+    itemsep=0.2em,
+    topsep=0.3em,
+    parsep=0pt,
+    partopsep=0pt
+}
+
+\begin{document}
+
+% ================================================================
+% FRONTMATTER (khong so trang)
+% ================================================================
+\pagestyle{empty}
+\input{frontmatter/titlepage.tex}
+\clearpage
+
+\pagestyle{fancy}
+\pagenumbering{roman}
+\setcounter{page}{1}
+
+\input{frontmatter/acknowledgment}
+\clearpage
+
+\input{frontmatter/declaration}
+\clearpage
+
+\input{frontmatter/abstract}
+\clearpage
+
+% MUC LUC
+\tableofcontents
+\clearpage
+
+\listoffigures
+\clearpage
+
+\listoftables
+\clearpage
+
+% ================================================================
+% NOI DUNG CHINH
+% ================================================================
+\pagenumbering{arabic}
+\setcounter{page}{1}
+
+\input{content/C1}
+\input{content/C2}
+\input{content/C3}
+\input{content/C4}
+\input{content/C5}
+\input{content/C6}
+\clearpage
+
+% ================================================================
+% TAI LIEU THAM KHAO
+% ================================================================
+\input{backmatter/05_tai_lieu_tham_khao}
+
+\end{document}

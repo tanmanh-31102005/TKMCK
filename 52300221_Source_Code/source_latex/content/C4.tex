@@ -1,0 +1,538 @@
+% =============================================================================
+% CHƯƠNG 4: TRIỂN KHAI TRÊN MININET
+% =============================================================================
+\chapter{Triển khai trên Mininet}
+
+\section{Môi trường cài đặt}
+
+\subsection{Yêu cầu hệ thống}
+
+\begin{table}[H]
+    \centering
+    \caption{Yêu cầu phần mềm và phần cứng}
+    \vspace{0.2cm}
+    \begin{tabularx}{\textwidth}{|>{\raggedright\arraybackslash}p{4cm}|>{\raggedright\arraybackslash}X|}
+        \hline
+        \textbf{Thành phần} & \textbf{Phiên bản / Yêu cầu} \\ \hline
+        Hệ điều hành & Ubuntu 22.04 LTS (64-bit) \\ \hline
+        RAM & Tối thiểu 4 GB (khuyên nghị 8 GB) \\ \hline
+        CPU & 2 cores trở lên \\ \hline
+        Disk & 20 GB trống \\ \hline
+        Python & Python 3.10+ \\ \hline
+        Mininet & 2.3.0+ \\ \hline
+        Open vSwitch & 2.17+ \\ \hline
+        iperf3 & 3.9+ \\ \hline
+        iproute2 & Hỗ trợ MPLS (kernel 4.1+) \\ \hline
+    \end{tabularx}
+    \label{tab:requirements}
+\end{table}
+
+\subsection{Hướng dẫn cài đặt}
+
+\textbf{Bước 1: Cập nhật hệ thống}
+
+\begin{lstlisting}[style=bashstyle, caption={Cập nhật hệ thống Ubuntu}]
+sudo apt update && sudo apt upgrade -y
+\end{lstlisting}
+
+\textbf{Bước 2: Cài đặt các gói cần thiết}
+
+\begin{lstlisting}[style=bashstyle, caption={Cài đặt Mininet và các công cụ hỗ trợ}]
+sudo apt install -y \
+    mininet \
+    openvswitch-switch openvswitch-common \
+    python3 python3-pip \
+    iperf3 iperf \
+    tcpdump net-tools iproute2 \
+    iputils-ping traceroute \
+    python3-matplotlib python3-numpy \
+    curl wget git
+\end{lstlisting}
+
+\textbf{Bước 3: Kích hoạt MPLS kernel module}
+
+\begin{lstlisting}[style=bashstyle, caption={Load module MPLS và bật platform labels}]
+# Load module MPLS
+sudo modprobe mpls_router
+sudo modprobe mpls_iptunnel
+sudo modprobe mpls_gso
+
+# Kiem tra module da load:
+lsmod | grep mpls
+
+# Bat platform labels
+echo 'net.mpls.platform_labels = 100000' | \
+    sudo tee -a /etc/sysctl.conf
+sudo sysctl -p
+\end{lstlisting}
+
+\textbf{Bước 4: Kiểm tra Mininet hoạt động}
+
+\begin{lstlisting}[style=bashstyle, caption={Kiểm tra Mininet với topo đơn giản}]
+# Test don gian: topo single,3 voi ping
+sudo mn --topo single,3 --test ping
+
+# Ket qua mong doi:
+# *** Results: 0% dropped (6/6 received)
+
+# Don dep sau test
+sudo mn -c
+\end{lstlisting}
+
+\section{Cấu trúc file code}
+
+\begin{Verbatim}[fontsize=\small, frame=single, label={Cây thư mục dự án}]
+TKM2/
++-- topology/
+|   +-- metro_full.py        <- Orchestrator tong the (file chinh)
+|   +-- configure_mpls.py    <- Cau hinh MPLS Push/Swap/Pop
+|   +-- topo_branch1_flat.py
+|   +-- topo_branch2_3tier.py
+|   +-- topo_branch3_leafspine.py
+|   +-- topo_backbone_mpls.py
++-- scripts/
+|   +-- run_measurements.py  <- Do luong tu dong
+|   +-- plot_results.py      <- Ve bieu do
+|   +-- parse_ping.py
+|   +-- parse_iperf.py
+|   +-- aggregate_results.py
++-- config/
+|   +-- tests.yaml           <- Cau hinh kich ban do luong
++-- results/
+|   +-- raw/                 <- Log thu
+|   +-- csv/                 <- Du lieu tong hop
+|   +-- charts/              <- Bieu do PNG
++-- source_latex/            <- Bao cao LaTeX
++-- README.md
+\end{Verbatim}
+
+\section{Mã nguồn chi tiết}
+
+\subsection{Lớp \texttt{LinuxRouter} và \texttt{MetroFullTopo}}
+
+Lớp \texttt{LinuxRouter} kế thừa từ \texttt{Node} của Mininet, bật \texttt{ip\_forward} để node hoạt động như router Linux thật sự:
+
+\begin{lstlisting}[style=pythonstyle, caption={Lớp LinuxRouter -- node hoạt động như IP router}]
+class LinuxRouter(Node):
+    """Node bat ip_forward -> hoat dong nhu Linux router."""
+    def config(self, **params):
+        super().config(**params)
+        self.cmd('sysctl -w net.ipv4.ip_forward=1')
+
+    def terminate(self):
+        self.cmd('sysctl -w net.ipv4.ip_forward=0')
+        super().terminate()
+\end{lstlisting}
+
+Lớp \texttt{MetroFullTopo} xây dựng toàn bộ topology theo phương pháp modular:
+
+\begin{lstlisting}[style=pythonstyle, caption={Lớp MetroFullTopo -- xây dựng topology modular}]
+class MetroFullTopo(Topo):
+    def build(self, **opts):
+        self._build_backbone()   # CE/PE/P + P2P links
+        self._build_branch1()    # Flat Network
+        self._build_branch2()    # 3-Tier CDA
+        self._build_branch3()    # Leaf-Spine
+        self._build_glue_links() # CE <-> CE_LAN
+
+    def _build_backbone(self):
+        # CE routers (Customer Edge)
+        self.addNode('ce1', cls=LinuxRouter, ip=None)
+        self.addNode('ce2', cls=LinuxRouter, ip=None)
+        self.addNode('ce3', cls=LinuxRouter, ip=None)
+        # PE routers (Provider Edge)
+        self.addNode('pe1', cls=LinuxRouter, ip=None)
+        self.addNode('pe2', cls=LinuxRouter, ip=None)
+        self.addNode('pe3', cls=LinuxRouter, ip=None)
+        # P routers (Provider Core)
+        self.addNode('p1', cls=LinuxRouter, ip=None)
+        self.addNode('p2', cls=LinuxRouter, ip=None)
+        self.addNode('p3', cls=LinuxRouter, ip=None)
+        self.addNode('p4', cls=LinuxRouter, ip=None)
+        # CE-PE links (point-to-point /30)
+        self.addLink('ce1', 'pe1',
+            intfName1='ce1-eth0', params1={'ip': '10.0.1.1/30'},
+            intfName2='pe1-eth0', params2={'ip': '10.0.1.2/30'})
+        # PE-P links
+        self.addLink('pe1', 'p1',
+            intfName1='pe1-eth1', params1={'ip': '10.10.11.1/30'},
+            intfName2='p1-eth0',  params2={'ip': '10.10.11.2/30'})
+        # P-P links (full-mesh P1/P2/P3/P4)
+        self.addLink('p1', 'p2',
+            intfName1='p1-eth1', params1={'ip': '10.20.12.1/30'},
+            intfName2='p2-eth1', params2={'ip': '10.20.12.2/30'})
+\end{lstlisting}
+
+
+
+\subsection{Xây dựng chi nhánh 1 -- Flat Network}
+
+\begin{lstlisting}[style=pythonstyle, caption={Hàm \_build\_branch1() -- Flat Network}]
+def _build_branch1(self):
+    """Switch access + 4 host + ce1_lan. Subnet: 10.1.0.0/24."""
+    self.addNode('ce1_lan', cls=LinuxRouter, ip=None)
+    s_acc1 = self.addSwitch('s_acc1',
+                             cls=OVSSwitch,
+                             failMode='standalone')
+    # 4 hosts voi default route qua ce1_lan
+    self.addHost('host1', ip='10.1.0.101/24',
+                 defaultRoute='via 10.1.0.1')
+    self.addHost('host2', ip='10.1.0.102/24',
+                 defaultRoute='via 10.1.0.1')
+    self.addHost('host3', ip='10.1.0.103/24',
+                 defaultRoute='via 10.1.0.1')
+    self.addHost('host4', ip='10.1.0.104/24',
+                 defaultRoute='via 10.1.0.1')
+    # host <-> switch access
+    for h in ['host1','host2','host3','host4']:
+        self.addLink(h, s_acc1)
+    # switch access <-> ce1_lan (gateway LAN)
+    self.addLink(s_acc1, 'ce1_lan',
+        intfName2='ce1_lan-eth0',
+        params2={'ip': '10.1.0.1/24'})
+\end{lstlisting}
+
+\subsection{Xây dựng chi nhánh 2 -- 3-Tier CDA}
+
+\begin{lstlisting}[style=pythonstyle, caption={Hàm \_build\_branch2() -- 3-Tier Core-Distribution-Access}]
+def _build_branch2(self):
+    """3 lop: core1/core2 -> dist1/dist2 -> acc1/acc2/acc3 -> hosts."""
+    self.addNode('ce2_lan', cls=LinuxRouter, ip=None)
+    core1 = self.addSwitch('core1', cls=OVSSwitch, failMode='standalone')
+    core2 = self.addSwitch('core2', cls=OVSSwitch, failMode='standalone')
+    dist1 = self.addSwitch('dist1', cls=OVSSwitch, failMode='standalone')
+    dist2 = self.addSwitch('dist2', cls=OVSSwitch, failMode='standalone')
+    acc1 = self.addSwitch('acc1',  cls=OVSSwitch, failMode='standalone')
+    acc2 = self.addSwitch('acc2',  cls=OVSSwitch, failMode='standalone')
+    acc3 = self.addSwitch('acc3',  cls=OVSSwitch, failMode='standalone')
+    self.addHost('admin1', ip='10.2.10.11/24',
+                 defaultRoute='via 10.2.10.1')
+    self.addHost('admin2', ip='10.2.10.12/24',
+                 defaultRoute='via 10.2.10.1')
+    self.addHost('lab1', ip='10.2.20.21/24',
+                 defaultRoute='via 10.2.20.1')
+    self.addHost('guest1', ip='10.2.30.31/24',
+                 defaultRoute='via 10.2.30.1')
+    # ce2_lan <-> Core (dual uplink)
+    self.addLink('ce2_lan', core1,
+        intfName1='ce2_lan-eth0', params1={'ip': '10.2.0.1/30'})
+    self.addLink('ce2_lan', core2,
+        intfName1='ce2_lan-eth1', params1={'ip': '10.2.0.5/30'})
+    # Core <-> Distribution (cross-connected)
+    self.addLink(core1, dist1); self.addLink(core1, dist2)
+    self.addLink(core2, dist1); self.addLink(core2, dist2)
+    # Distribution <-> Access
+    self.addLink(dist1, acc1); self.addLink(dist1, acc2)
+    self.addLink(dist2, acc2); self.addLink(dist2, acc3)
+\end{lstlisting}
+
+\subsection{Xây dựng chi nhánh 3 -- Leaf-Spine}
+
+\begin{lstlisting}[style=pythonstyle, caption={Hàm \_build\_branch3() -- Leaf-Spine (2-tier)}]
+def _build_branch3(self):
+    """2 Spine + 3 Leaf (full-mesh) + 6 servers."""
+    self.addNode('ce3_lan', cls=LinuxRouter, ip=None)
+    spine1 = self.addSwitch('spine1', cls=OVSSwitch, failMode='standalone')
+    spine2 = self.addSwitch('spine2', cls=OVSSwitch, failMode='standalone')
+    leaf1  = self.addSwitch('leaf1',  cls=OVSSwitch, failMode='standalone')
+    leaf2  = self.addSwitch('leaf2',  cls=OVSSwitch, failMode='standalone')
+    leaf3  = self.addSwitch('leaf3',  cls=OVSSwitch, failMode='standalone')
+    # Server zones
+    self.addHost('web1', ip='10.3.10.11/24',
+                 defaultRoute='via 10.3.10.1')
+    self.addHost('dns1', ip='10.3.20.21/24',
+                 defaultRoute='via 10.3.20.1')
+    self.addHost('db1',  ip='10.3.30.31/24',
+                 defaultRoute='via 10.3.30.1')
+    # ce3_lan <-> Spine (dual uplink)
+    self.addLink('ce3_lan', spine1,
+        intfName1='ce3_lan-eth0', params1={'ip': '10.3.0.1/30'})
+    self.addLink('ce3_lan', spine2,
+        intfName1='ce3_lan-eth1', params1={'ip': '10.3.0.5/30'})
+    # Spine <-> Leaf (full-mesh)
+    for spine in [spine1, spine2]:
+        for leaf in [leaf1, leaf2, leaf3]:
+            self.addLink(spine, leaf)
+    # Leaf <-> Servers
+    self.addLink(leaf1, 'web1'); self.addLink(leaf1, 'web2')
+    self.addLink(leaf2, 'dns1'); self.addLink(leaf2, 'dns2')
+    self.addLink(leaf3, 'db1');  self.addLink(leaf3, 'db2')
+\end{lstlisting}
+
+\section{Cấu hình MPLS (Push -- Swap -- Pop)}
+
+\subsection{Bước 1: Bật MPLS trên các node backbone}
+
+\begin{lstlisting}[style=pythonstyle, caption={Hàm khởi tạo MPLS trên từng node}]
+def configure_mpls(net):
+    """Cau hinh Linux Kernel MPLS tren toan backbone."""
+    MPLS_NODES = ['pe1', 'pe2', 'pe3', 'p1', 'p2', 'p3', 'p4']
+    MPLS_INTERFACES = {
+        'pe1': ['pe1-eth1', 'pe1-eth2'],
+        'pe2': ['pe2-eth1', 'pe2-eth2'],
+        'pe3': ['pe3-eth1', 'pe3-eth2'],
+        'p1':  ['p1-eth0', 'p1-eth1', 'p1-eth2', 'p1-eth3'],
+        'p2':  ['p2-eth0', 'p2-eth1', 'p2-eth2', 'p2-eth3'],
+        'p3':  ['p3-eth0', 'p3-eth1', 'p3-eth2', 'p3-eth3', 'p3-eth4'],
+        'p4':  ['p4-eth0', 'p4-eth1', 'p4-eth2', 'p4-eth3', 'p4-eth4'],
+    }
+    for name in MPLS_NODES:
+        node = net[name]
+        node.cmd('modprobe mpls_router   2>/dev/null || true')
+        node.cmd('modprobe mpls_iptunnel 2>/dev/null || true')
+        node.cmd('sysctl -w net.mpls.platform_labels=100000')
+        for iface in MPLS_INTERFACES.get(name, []):
+            node.cmd(f'sysctl -w net.mpls.conf.{iface}.input=1')
+\end{lstlisting}
+
+\subsection{Bước 2: Cấu hình PUSH tại PE routers (Ingress LER)}
+
+\begin{lstlisting}[style=pythonstyle, caption={Cấu hình PUSH tại PE1, PE2, PE3}]
+def _configure_pe_push(net):
+    """PUSH: PE gan nhan MPLS vao goi IP den tu CE."""
+    pe1, pe2, pe3 = net['pe1'], net['pe2'], net['pe3']
+
+    # PE1: push label cho traffic den LAN2 (200) va LAN3 (300)
+    pe1.cmd('ip route add 10.2.0.0/16  encap mpls 200 '
+            'via 10.10.11.2 dev pe1-eth1')
+    pe1.cmd('ip route add 10.3.0.0/16  encap mpls 300 '
+            'via 10.10.11.2 dev pe1-eth1')
+
+    # PE2: push label cho traffic den LAN1 (100) va LAN3 (310)
+    pe2.cmd('ip route add 10.1.0.0/24  encap mpls 100 '
+            'via 10.10.23.2 dev pe2-eth1')
+    pe2.cmd('ip route add 10.3.0.0/16  encap mpls 310 '
+            'via 10.10.24.2 dev pe2-eth2')
+
+    # PE3: push label cho traffic den LAN1 (110) va LAN2 (210)
+    pe3.cmd('ip route add 10.1.0.0/24  encap mpls 110 '
+            'via 10.10.32.2 dev pe3-eth1')
+    pe3.cmd('ip route add 10.2.0.0/16  encap mpls 210 '
+            'via 10.10.32.2 dev pe3-eth1')
+\end{lstlisting}
+
+\subsection{Bước 3: Cấu hình SWAP tại P routers (Transit LSR)}
+
+\begin{lstlisting}[style=pythonstyle, caption={Cấu hình SWAP LFIB tại P1, P2, P3, P4}]
+def _configure_p_lfib(net):
+    """SWAP: P nhan goi co nhan, thay bang nhan moi, day ra interface."""
+    p1, p2, p3, p4 = net['p1'], net['p2'], net['p3'], net['p4']
+
+    # ---- P1: SWAP ----
+    p1.cmd('ip -f mpls route add 200 as 201 via inet 10.20.13.2 dev p1-eth2')
+    p1.cmd('ip -f mpls route add 300 as 301 via inet 10.20.12.2 dev p1-eth1')
+    p1.cmd('ip -f mpls route add 101 as 0   via inet 10.10.11.1 dev p1-eth0')
+    p1.cmd('ip -f mpls route add 111 as 0   via inet 10.10.11.1 dev p1-eth0')
+
+    # ---- P2: SWAP ----
+    p2.cmd('ip -f mpls route add 110 as 111 via inet 10.20.12.1 dev p2-eth1')
+    p2.cmd('ip -f mpls route add 210 as 211 via inet 10.20.24.2 dev p2-eth3')
+    p2.cmd('ip -f mpls route add 301 as 0   via inet 10.10.32.1 dev p2-eth0')
+
+    # ---- P3: SWAP ----
+    p3.cmd('ip -f mpls route add 100 as 101 via inet 10.20.13.1 dev p3-eth2')
+    p3.cmd('ip -f mpls route add 201 as 0   via inet 10.10.23.1 dev p3-eth1')
+    p3.cmd('ip -f mpls route add 310 as 311 via inet 10.20.34.2 dev p3-eth4')
+
+    # ---- P4: SWAP ----
+    p4.cmd('ip -f mpls route add 311 as 0   via inet 10.10.34.1 dev p4-eth1')
+    p4.cmd('ip -f mpls route add 211 as 0   via inet 10.10.24.1 dev p4-eth0')
+\end{lstlisting}
+
+\section{Hướng dẫn chạy topology}
+
+\subsection{Khởi động topology tổng thể}
+
+\begin{lstlisting}[style=bashstyle, caption={Chạy toàn bộ hệ thống Metro Ethernet MPLS}]
+# Vao thu muc topology
+cd ~/TKM2/topology
+
+# Don dep Mininet cu (neu can)
+sudo mn -c
+
+# Chay topology tong the (3 chi nhanh + MPLS backbone)
+sudo python3 metro_full.py
+\end{lstlisting}
+
+\subsection{Kiểm tra kết nối trong Mininet CLI}
+
+\begin{lstlisting}[style=bashstyle, caption={Các lệnh kiểm tra cơ bản trong Mininet CLI}]
+# Kiem tra tat ca node
+mininet> nodes
+
+# Ping tu chi nhanh 1 sang chi nhanh 2 (cross-branch)
+mininet> host1 ping -c 5 10.2.10.11
+
+# Ping tu chi nhanh 1 sang chi nhanh 3
+mininet> host1 ping -c 5 10.3.10.11
+
+# Xem bang dinh tuyen cua CE1
+mininet> ce1 ip route
+
+# Xem bang MPLS cua P1
+mininet> p1 ip -f mpls route
+
+# Traceroute tu host1 -> admin1 (xem duong qua backbone)
+mininet> host1 traceroute -n 10.2.10.11
+\end{lstlisting}
+
+\subsection{Kết quả ping end-to-end thực tế -- Chi nhánh 1 (Flat)}
+
+\begin{lstlisting}[style=termstyle, caption={Ping intra-branch: host1 $\to$ host2 và host1 $\to$ host3 (Flat Network)}]
+>>> Test: host1->host2 [intra-flat]
+  Run 1/3: ping 20 goi ICMP...  loss=0.0%  avg=0.066ms  min=0.030ms
+  Run 2/3: ping 20 goi ICMP...  loss=0.0%  avg=0.046ms  min=0.030ms
+  Run 3/3: ping 20 goi ICMP...  loss=0.0%  avg=0.045ms  min=0.030ms
+  [OK] @ 10Mbps : tput=10.00Mbps  delay=0.0523ms  loss=0.0%   jitter=0.7588ms
+  [OK] @ 50Mbps : tput=50.00Mbps  delay=0.0523ms  loss=0.0%   jitter=0.1565ms
+  [OK] @ 100Mbps: tput=99.98Mbps  delay=0.0523ms  loss=0.0%   jitter=0.0686ms
+
+>>> Test: host1->host3 [intra-flat]
+  Run 1/3: ping 20 goi ICMP...  loss=0.0%  avg=0.065ms  min=0.035ms
+  Run 2/3: ping 20 goi ICMP...  loss=0.0%  avg=0.046ms  min=0.035ms
+  Run 3/3: ping 20 goi ICMP...  loss=0.0%  avg=0.047ms  min=0.035ms
+  [OK] @ 10Mbps : tput=10.00Mbps  delay=0.0527ms  loss=0.0%   jitter=0.8368ms
+  [OK] @ 50Mbps : tput=49.99Mbps  delay=0.0527ms  loss=0.0%   jitter=0.1626ms
+  [OK] @ 100Mbps: tput=99.97Mbps  delay=0.0527ms  loss=0.0%   jitter=0.1868ms
+\end{lstlisting}
+
+\begin{lstlisting}[style=termstyle, caption={Ping cross-branch: host1 (Flat) $\to$ admin1 (3-Tier) và web1 (Leaf-Spine)}]
+>>> Test: host1->admin1 [flat->3tier, cross-branch qua MPLS]
+  Run 1/3: ping 20 goi ICMP...  loss=0.0%  avg=0.110ms  min=0.0797ms
+  Run 2/3: ping 20 goi ICMP...  loss=0.0%  avg=0.100ms  min=0.0797ms
+  Run 3/3: ping 20 goi ICMP...  loss=0.0%  avg=0.104ms  min=0.0797ms
+  [OK] @ 10Mbps : tput=10.00Mbps  delay=0.1047ms  loss=0.0%    jitter=0.9715ms
+  [OK] @ 50Mbps : tput=49.99Mbps  delay=0.1047ms  loss=0.0%    jitter=0.1969ms
+  [OK] @ 100Mbps: tput=99.99Mbps  delay=0.1047ms  loss=0.0167% jitter=0.0893ms
+
+>>> Test: host1->web1 [flat->leafspine, cross-branch qua MPLS]
+  Run 1/3: ping 20 goi ICMP...  loss=0.0%  avg=0.122ms  min=0.0777ms
+  Run 2/3: ping 20 goi ICMP...  loss=0.0%  avg=0.105ms  min=0.0777ms
+  Run 3/3: ping 20 goi ICMP...  loss=0.0%  avg=0.103ms  min=0.0777ms
+  [OK] @ 10Mbps : tput=10.00Mbps  delay=0.110ms  loss=0.0%  jitter=0.8527ms
+  [OK] @ 50Mbps : tput=49.99Mbps  delay=0.110ms  loss=0.0%  jitter=0.1820ms
+  [OK] @ 100Mbps: tput=99.99Mbps  delay=0.110ms  loss=0.0%  jitter=0.0725ms
+\end{lstlisting}
+
+\subsection{Kết quả ping end-to-end -- Chi nhánh 2 (3-Tier)}
+
+\begin{lstlisting}[style=termstyle, caption={Ping intra-branch: admin1 $\to$ admin2 (same-VLAN), lab1, guest1 (inter-VLAN)}]
+>>> Test: admin1->admin2 [same-VLAN10, intra-3tier]
+  Run 1/3: ping...  loss=0.0%  avg=0.060ms  |  Run 2: avg=0.050ms  |  Run 3: avg=0.047ms
+  [OK] @ 100Mbps: tput=99.98Mbps  delay=0.0523ms  loss=0.0%   jitter=0.1074ms
+
+>>> Test: admin1->lab1 [inter-VLAN: VLAN10->VLAN20]
+  Run 1/3: ping...  loss=0.0%  avg=0.081ms  |  Run 2: avg=0.075ms  |  Run 3: avg=0.071ms
+  [OK] @ 10Mbps : tput=10.00Mbps  delay=0.0757ms  loss=0.0%  jitter=0.9006ms
+  [OK] @ 50Mbps : tput=49.99Mbps  delay=0.0757ms  loss=0.0%  jitter=0.1311ms
+  [OK] @ 100Mbps: tput=99.99Mbps  delay=0.0757ms  loss=0.0%  jitter=0.0331ms
+
+>>> Test: admin1->guest1 [inter-VLAN: VLAN10->VLAN30]
+  Run 1/3: ping...  loss=0.0%  avg=0.101ms  |  Run 2: avg=0.076ms  |  Run 3: avg=0.078ms
+  [OK] @ 10Mbps : tput=10.00Mbps  delay=0.0850ms  loss=0.0%    jitter=0.8591ms
+  [OK] @ 100Mbps: tput=99.99Mbps  delay=0.0850ms  loss=0.0067% jitter=0.0477ms
+\end{lstlisting}
+
+\begin{lstlisting}[style=termstyle, caption={Ping cross-branch: admin1 (3-Tier) $\to$ host1 (Flat) và web1 (Leaf-Spine)}]
+>>> Test: admin1->host1 [3tier->flat, cross-branch qua MPLS]
+  Run 1/3: ping...  avg=0.118ms  |  Run 2: avg=0.100ms  |  Run 3: avg=0.104ms
+  [OK] @ 100Mbps: tput=99.98Mbps  delay=0.1073ms  loss=0.0%  jitter=0.1518ms
+  TCP throughput avg: 24333.571 Mbps
+
+>>> Test: admin1->web1 [3tier->leafspine, cross-branch qua MPLS]
+  Run 1/3: ping...  avg=0.126ms  |  Run 2: avg=0.106ms  |  Run 3: avg=0.108ms
+  [OK] @ 100Mbps: tput=99.99Mbps  delay=0.1133ms  loss=0.0%  jitter=0.1502ms
+  TCP throughput avg: 22127.227 Mbps
+\end{lstlisting}
+
+\subsection{Kết quả ping end-to-end -- Chi nhánh 3 (Leaf-Spine)}
+
+\begin{lstlisting}[style=termstyle, caption={Ping intra-branch: web1 $\to$ web2 (same-leaf), dns1, db1 (2-hop)}]
+>>> Test: web1->web2 [same-leaf1, intra-leafspine]
+  Run 1/3: ping...  avg=0.067ms  |  Run 2: avg=0.047ms  |  Run 3: avg=0.047ms
+  [OK] @ 100Mbps: tput=99.99Mbps  delay=0.0537ms  loss=0.0%  jitter=0.0397ms
+
+>>> Test: web1->dns1 [leaf1->leaf2, 2-hop via Spine]
+  Run 1/3: ping...  avg=0.076ms  |  Run 2: avg=0.070ms  |  Run 3: avg=0.068ms
+  [OK] @ 10Mbps : tput=10.00Mbps  delay=0.0713ms  loss=0.0%   jitter=0.7190ms
+  [OK] @ 100Mbps: tput=99.98Mbps  delay=0.0713ms  loss=0.07%  jitter=0.1095ms
+
+>>> Test: web1->db1 [leaf1->leaf3, 2-hop via Spine]
+  Run 1/3: ping...  avg=0.087ms  |  Run 2: avg=0.072ms  |  Run 3: avg=0.073ms
+  [OK] @ 100Mbps: tput=99.99Mbps  delay=0.0767ms  loss=0.0%  jitter=0.0813ms
+\end{lstlisting}
+
+\begin{lstlisting}[style=termstyle, caption={Ping cross-branch: web1 (Leaf-Spine) $\to$ host1 (Flat) và admin1 (3-Tier)}]
+>>> Test: web1->host1 [leafspine->flat, cross-branch qua MPLS]
+  Run 1/3: ping...  avg=0.118ms  |  Run 2: avg=0.106ms  |  Run 3: avg=0.107ms
+  [OK] @ 100Mbps: tput=99.99Mbps  delay=0.1103ms  loss=0.0267% jitter=0.1021ms
+  TCP throughput avg: 22105.305 Mbps
+
+>>> Test: web1->admin1 [leafspine->3tier, cross-branch qua MPLS]
+  Run 1/3: ping...  avg=0.125ms  |  Run 2: avg=0.111ms  |  Run 3: avg=0.107ms
+  [OK] @ 100Mbps: tput=99.99Mbps  delay=0.1143ms  loss=0.0967% jitter=0.0915ms
+  TCP throughput avg: 22208.975 Mbps
+
+=== TONG KET: 42 records, 14 kich ban, lap lai 3 lan ===
+  Tat ca cross-branch: loss < 0.1%, delay < 0.12ms, tput > 99.97%
+  CSV: results/csv/results_20260418_010018.csv
+\end{lstlisting}
+
+\subsection{Đo thông lượng iperf3 trong CLI}
+
+\begin{lstlisting}[style=bashstyle, caption={Đo thông lượng TCP và UDP bằng iperf3}]
+# Do TCP throughput: host1 -> admin1 (cross-branch)
+mininet> admin1 iperf3 -s &
+mininet> host1  iperf3 -c 10.2.10.11 -t 10
+
+# Do UDP jitter va packet loss: host1 -> web1
+mininet> web1   iperf3 -s &
+mininet> host1  iperf3 -c 10.3.10.11 -u -b 100M -t 10
+
+# Thoat va don dep
+mininet> exit
+sudo mn -c
+\end{lstlisting}
+
+
+\section{Bộ công cụ đo lường tự động}
+
+\subsection{Cấu hình kịch bản đo lường}
+
+\begin{lstlisting}[style=pythonstyle, caption={Cấu hình kịch bản đo lường trong tests.yaml}]
+scenarios:
+  - name: flat
+    arch_name: "Flat Network (Chi nhanh 1)"
+    tests:
+      - src: host1
+        dst_ip: 10.1.0.102
+        description: "host1->host2 [intra-flat]"
+        type: intra
+      - src: host1
+        dst_ip: 10.2.10.11
+        description: "host1->admin1 [flat->3tier]"
+        type: cross
+
+measurement:
+  ping_count: 20          # So goi ICMP
+  iperf_duration: 10      # Thoi gian do (giay)
+  bandwidths: [10M, 50M, 100M]  # Cac muc tai UDP
+  repeats: 3              # So lan lap lai moi kich ban
+\end{lstlisting}
+
+\begin{lstlisting}[style=bashstyle, caption={Chạy bộ đo lường tự động}]
+# Chay do luong va luu ket qua
+cd ~/TKM2
+sudo python3 scripts/run_measurements.py \
+    --topology topology/metro_full.py \
+    --config   config/tests.yaml \
+    --output   results/
+
+# Ket qua luu tai:
+#   results/csv/results_<timestamp>.csv
+#   results/raw/all_<timestamp>/
+
+# Ve bieu do tu CSV
+python3 scripts/plot_results.py \
+    --csv results/csv/results_20260418_010018.csv
+\end{lstlisting}

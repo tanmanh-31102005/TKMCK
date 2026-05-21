@@ -1,0 +1,17 @@
+\addvspace {10\p@ }
+\addvspace {10\p@ }
+\contentsline {table}{\numberline {2.1}{\ignorespaces So sánh MPLS và IP Routing truyền thống}}{5}{table.caption.1}%
+\contentsline {table}{\numberline {2.2}{\ignorespaces Định nghĩa và đơn vị đo các chỉ số hiệu năng}}{7}{table.caption.2}%
+\addvspace {10\p@ }
+\contentsline {table}{\numberline {3.1}{\ignorespaces B\h {a}ng ph\^an ph\^oi nh\~an MPLS (LFIB -- Label Forwarding Information Base)}}{13}{table.caption.5}%
+\contentsline {table}{\numberline {3.2}{\ignorespaces B\h {a}ng \dj {}\d {i}a ch\h {i} IP -- LAN chi nh\'anh}}{13}{table.caption.6}%
+\contentsline {table}{\numberline {3.3}{\ignorespaces B\h {a}ng \dj {}\d {i}a ch\h {i} IP -- Backbone ISP MPLS}}{14}{table.caption.7}%
+\addvspace {10\p@ }
+\contentsline {table}{\numberline {4.1}{\ignorespaces Y\^eu c\`au ph\`an m\`em v\`a ph\`an c\h {u}ng}}{15}{table.caption.8}%
+\addvspace {10\p@ }
+\contentsline {table}{\numberline {5.1}{\ignorespaces K\^et qu\h {a} \dj {\^o} l\u {o}ng n\d {o}i b\d {o} (intra-branch) t\d {a}i 100 Mbps UDP}}{29}{table.caption.9}%
+\contentsline {table}{\numberline {5.2}{\ignorespaces K\^et qu\h {a} \dj {\^o} l\u {o}ng cross-branch (xuy\^en backbone MPLS) t\d {a}i 100 Mbps UDP}}{32}{table.caption.10}%
+\contentsline {table}{\numberline {5.3}{\ignorespaces TCP Throughput (Mbps) qua backbone MPLS vs. n\d {o}i b\d {o} chi nh\'anh}}{32}{table.caption.11}%
+\addvspace {10\p@ }
+\contentsline {table}{\numberline {6.1}{\ignorespaces Tổng hợp kết quả đo lường thực tế -- Cross-branch (100 Mbps UDP)}}{40}{table.caption.20}%
+\contentsline {table}{\numberline {6.2}{\ignorespaces Đánh giá tổng hợp 3 kiến trúc LAN dựa trên kết quả đo lường thực tế}}{40}{table.caption.21}%
